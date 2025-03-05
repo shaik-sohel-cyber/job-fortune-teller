@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -328,6 +327,18 @@ const VirtualInterview = () => {
         setIsThinking(false);
         setIsInterviewComplete(true);
         setIsTimerRunning(false);
+        
+        // Ensure we save the interview data here to prevent issues
+        // Calculate average interview score
+        const averageScore = interviewScore.reduce((sum, score) => sum + score, 0) / interviewScore.length;
+        
+        // Store interview data in localStorage
+        localStorage.setItem('interviewComplete', 'true');
+        localStorage.setItem('interviewScore', Math.round(averageScore).toString());
+        
+        // Store interview answers for analysis
+        const userResponses = messages.filter(m => m.role === "user").map(m => m.content);
+        localStorage.setItem('interviewResponses', JSON.stringify(userResponses));
       }, 1500);
     }
   };
@@ -407,17 +418,6 @@ const VirtualInterview = () => {
   };
 
   const viewResults = () => {
-    // Calculate average interview score
-    const averageScore = interviewScore.reduce((sum, score) => sum + score, 0) / interviewScore.length;
-    
-    // Store interview data in localStorage
-    localStorage.setItem('interviewComplete', 'true');
-    localStorage.setItem('interviewScore', averageScore.toString());
-    
-    // Store interview answers for analysis
-    const userResponses = messages.filter(m => m.role === "user").map(m => m.content);
-    localStorage.setItem('interviewResponses', JSON.stringify(userResponses));
-    
     // Navigate to results page
     navigate('/results');
   };
