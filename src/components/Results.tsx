@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
@@ -21,10 +20,8 @@ const Results = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Resume data
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
   
-  // Generate score interpretations
   const getScoreLabel = (score: number) => {
     if (score >= 80) return "Excellent";
     if (score >= 70) return "Very Good";
@@ -33,7 +30,6 @@ const Results = () => {
     return "Needs Improvement";
   };
   
-  // Get color based on score
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
     if (score >= 70) return "text-green-500";
@@ -42,7 +38,6 @@ const Results = () => {
     return "text-red-500";
   };
   
-  // Get progress bar color
   const getProgressColor = (score: number) => {
     if (score >= 80) return "bg-green-600";
     if (score >= 70) return "bg-green-500";
@@ -52,7 +47,6 @@ const Results = () => {
   };
   
   useEffect(() => {
-    // Check if user completed the interview
     if (!localStorage.getItem('interviewComplete')) {
       toast({
         title: "Interview not completed",
@@ -63,20 +57,15 @@ const Results = () => {
       return;
     }
     
-    // Simulate loading data
     setTimeout(() => {
-      // Generate scores from localStorage or generate random scores for demo
       const verificationResults = JSON.parse(localStorage.getItem('verificationResults') || '{"verifiedItems": 4, "totalItems": 5}');
       const assessmentScoreVal = parseInt(localStorage.getItem('assessmentScore') || '75');
       const interviewScoreVal = parseInt(localStorage.getItem('interviewScore') || '0') || Math.floor(60 + Math.random() * 30);
       
-      // Calculate resume score based on verification
       const resumeScoreVal = Math.round((verificationResults.verifiedItems / verificationResults.totalItems) * 100);
       
-      // Calculate overall score (weighted average)
       const overall = Math.round((resumeScoreVal * 0.3) + (assessmentScoreVal * 0.3) + (interviewScoreVal * 0.4));
       
-      // Calculate job success probability (add small randomization)
       const successProb = Math.min(95, Math.max(30, overall + (Math.random() * 10 - 5)));
       
       setResumeScore(resumeScoreVal);
@@ -85,7 +74,6 @@ const Results = () => {
       setOverallScore(overall);
       setJobSuccess(Math.round(successProb));
       
-      // Generate strengths based on scores
       const potentialStrengths = [
         "Strong technical knowledge demonstrated in assessment",
         "Clear and effective communication during interview",
@@ -98,7 +86,6 @@ const Results = () => {
         "Adaptability and willingness to learn"
       ];
       
-      // Generate weaknesses based on scores
       const potentialWeaknesses = [
         "Technical knowledge gaps in some areas",
         "Communication could be more concise and structured",
@@ -111,7 +98,6 @@ const Results = () => {
         "Could demonstrate more enthusiasm for the role"
       ];
       
-      // Generate recommendations
       const potentialRecommendations = [
         "Focus on strengthening technical skills in areas identified during assessment",
         "Practice structured interview responses using the STAR method",
@@ -124,11 +110,9 @@ const Results = () => {
         "Demonstrate more initiative and leadership in your examples"
       ];
       
-      // Select strengths, weaknesses and recommendations based on scores
       const numStrengths = Math.max(1, Math.floor(overall / 20));
       const numWeaknesses = Math.max(1, Math.floor((100 - overall) / 20));
       
-      // Shuffle and select
       const shuffleArray = (array: string[]) => array.sort(() => Math.random() - 0.5);
       
       setStrengths(shuffleArray([...potentialStrengths]).slice(0, numStrengths));
@@ -159,12 +143,10 @@ const Results = () => {
       }
     };
     
-    // Convert to JSON string
     const jsonString = JSON.stringify(resultsData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     
-    // Create download link
     const link = document.createElement("a");
     link.href = url;
     link.download = `job-prediction-results-${new Date().toISOString().split('T')[0]}.json`;
@@ -179,7 +161,6 @@ const Results = () => {
   };
   
   const restartProcess = () => {
-    // Clear localStorage
     localStorage.removeItem('resumeData');
     localStorage.removeItem('verificationResults');
     localStorage.removeItem('assessmentScore');
@@ -187,7 +168,6 @@ const Results = () => {
     localStorage.removeItem('interviewScore');
     localStorage.removeItem('interviewResponses');
     
-    // Navigate to home
     navigate('/');
   };
   
@@ -317,7 +297,7 @@ const Results = () => {
         >
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
             <div className="flex items-center text-green-600 mb-4">
-              <CheckCircle2 className="h-5 w-5 mr-2" />
+              <CheckCircle className="h-5 w-5 mr-2" />
               <h3 className="text-lg font-semibold">Strengths</h3>
             </div>
             <ul className="space-y-3">
