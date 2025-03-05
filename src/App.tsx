@@ -14,9 +14,6 @@ import NotFound from "@/pages/NotFound";
 // Import framer-motion for animations
 import { LazyMotion, domAnimation } from "framer-motion";
 
-// Add framer-motion dependency 
-<lov-add-dependency>framer-motion@10.16.4</lov-add-dependency>
-
 const queryClient = new QueryClient();
 
 const App = () => (
