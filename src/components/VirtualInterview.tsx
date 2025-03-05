@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, MicOff, Send, User, CornerDownRight, ArrowRight } from "lucide-react";
+import { Mic, MicOff, Send, User, CornerDownRight, ArrowRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Message {
@@ -14,19 +14,52 @@ interface Message {
   timestamp: Date;
 }
 
-// Sample interview questions
-const interviewQuestions = [
-  "Tell me about your experience with this specific technology mentioned in your resume.",
-  "How would you handle a situation where a project deadline is at risk?",
-  "Describe a challenging project you worked on and how you overcame obstacles.",
-  "What do you consider your greatest professional achievement?",
-  "How do you stay updated with the latest trends in your field?",
-  "Tell me about a time when you had to learn a new skill quickly for a project.",
-  "How do you handle feedback or criticism?",
-  "Where do you see yourself professionally in 5 years?",
-  "What makes you the right candidate for this position?",
-  "Do you have any questions for me about the role or company?"
-];
+// Enhanced interview questions based on job role and resume keywords
+const getInterviewQuestions = (jobTitle: string) => {
+  const commonQuestions = [
+    "Tell me about yourself and your background.",
+    "What made you interested in applying for this position?",
+    "How would you handle a situation where a project deadline is at risk?",
+    "What do you consider your greatest professional achievement?",
+    "How do you stay updated with the latest trends in your field?",
+    "Tell me about a time when you had to learn a new skill quickly for a project.",
+    "How do you handle feedback or criticism?",
+    "Where do you see yourself professionally in 5 years?",
+    "What makes you the right candidate for this position?",
+    "Do you have any questions for me about the role or company?"
+  ];
+
+  // Technical questions based on job title
+  const technicalQuestions: {[key: string]: string[]} = {
+    "Software Engineer": [
+      "Can you explain your approach to writing clean and maintainable code?",
+      "Describe a complex technical problem you solved and how you approached it.",
+      "How do you test your code to ensure it's working correctly?",
+      "What version control systems are you familiar with, and what's your workflow?",
+      "How do you handle technical debt in your projects?"
+    ],
+    "Frontend Developer": [
+      "What frontend frameworks have you worked with and which do you prefer?",
+      "How do you optimize website performance?",
+      "Explain your approach to responsive design.",
+      "How do you ensure accessibility in your web applications?",
+      "What strategies do you use for state management in complex applications?"
+    ],
+    "Data Scientist": [
+      "What machine learning models have you implemented in real projects?",
+      "How do you handle imbalanced datasets?",
+      "Explain your approach to feature engineering.",
+      "How do you evaluate the performance of your models?",
+      "How do you communicate technical results to non-technical stakeholders?"
+    ]
+  };
+
+  // Get role-specific questions or default to Software Engineer if role not found
+  const roleQuestions = technicalQuestions[jobTitle] || technicalQuestions["Software Engineer"];
+  
+  // Combine common and role-specific questions
+  return [...commonQuestions.slice(0, 5), ...roleQuestions, ...commonQuestions.slice(5)];
+};
 
 const VirtualInterview = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -35,19 +68,71 @@ const VirtualInterview = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isInterviewComplete, setIsInterviewComplete] = useState(false);
+  const [interviewTimer, setInterviewTimer] = useState(1800); // 30 minutes in seconds
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [interviewQuestions, setInterviewQuestions] = useState<string[]>([]);
+  const [interviewScore, setInterviewScore] = useState<number[]>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Fetch resume data from localStorage
+  // Format time for display
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+  
+  // Fetch resume data and verification results from localStorage
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
+  const verificationResults = JSON.parse(localStorage.getItem('verificationResults') || 'null');
+  const assessmentScore = parseInt(localStorage.getItem('assessmentScore') || '0');
 
   useEffect(() => {
-    // Welcome message
+    // Check if user has completed earlier steps
+    if (!localStorage.getItem('resumeData')) {
+      toast({
+        title: "Resume not uploaded",
+        description: "Please upload your resume first.",
+        variant: "destructive",
+      });
+      navigate('/upload');
+      return;
+    }
+
+    if (!localStorage.getItem('verificationResults')) {
+      toast({
+        title: "Resume not verified",
+        description: "Please complete the verification process first.",
+        variant: "destructive",
+      });
+      navigate('/verification');
+      return;
+    }
+
+    if (!localStorage.getItem('assessmentScore')) {
+      toast({
+        title: "Assessment not completed",
+        description: "Please complete the technical assessment first.",
+        variant: "destructive",
+      });
+      navigate('/assessment');
+      return;
+    }
+    
+    // Get job-specific interview questions
+    const questions = getInterviewQuestions(resumeData.jobTitle);
+    setInterviewQuestions(questions);
+    
+    // Initialize interview scores array
+    setInterviewScore(new Array(questions.length).fill(0));
+    
+    // Welcome message with personalized details
     const welcomeMessage: Message = {
       id: "welcome",
       role: "assistant",
-      content: `Welcome to your virtual interview for the ${resumeData.jobTitle} position at ${resumeData.company}. I'll be asking you a series of questions to evaluate your fit for this role. Please answer honestly and thoroughly.`,
+      content: `Welcome to your virtual interview for the ${resumeData.jobTitle} position at ${resumeData.company}. I'll be asking you a series of questions to evaluate your fit for this role. Based on your resume verification and technical assessment, we're looking forward to learning more about your experience and skills. Please answer thoroughly and provide specific examples when possible.`,
       timestamp: new Date(),
     };
     
@@ -56,9 +141,31 @@ const VirtualInterview = () => {
     // Send first question after a delay
     setTimeout(() => {
       sendNextQuestion();
-    }, 1000);
+      setIsTimerRunning(true);
+    }, 1500);
   }, []);
 
+  // Countdown timer for interview
+  useEffect(() => {
+    if (interviewTimer > 0 && isTimerRunning && !isInterviewComplete) {
+      const timer = setTimeout(() => setInterviewTimer(interviewTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (interviewTimer === 0 && !isInterviewComplete) {
+      // Auto-complete interview if time runs out
+      const timeoutMessage: Message = {
+        id: `timeout-${Date.now()}`,
+        role: "assistant",
+        content: "I notice that our interview time is up. Let's wrap up here. Thank you for your responses. We'll now analyze your performance and provide you with feedback.",
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, timeoutMessage]);
+      setTimeout(() => {
+        setIsInterviewComplete(true);
+      }, 2000);
+    }
+  }, [interviewTimer, isTimerRunning, isInterviewComplete]);
+  
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -83,7 +190,7 @@ const VirtualInterview = () => {
         setMessages(prev => [...prev, newMessage]);
         setIsThinking(false);
         setCurrentQuestion(prev => prev + 1);
-      }, 1000);
+      }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
     } else {
       // Interview complete
       setIsThinking(true);
@@ -92,13 +199,14 @@ const VirtualInterview = () => {
         const finalMessage: Message = {
           id: "interview-complete",
           role: "assistant",
-          content: "Thank you for completing the interview. I'll now analyze your responses and provide a job success prediction. Click the 'View Results' button when you're ready.",
+          content: "Thank you for completing the interview. I appreciate your thoughtful responses and examples. Based on your interview, technical assessment, and resume, I'll now provide a comprehensive evaluation of your candidacy. Click the 'View Results' button when you're ready to see your personalized feedback and job success prediction.",
           timestamp: new Date(),
         };
         
         setMessages(prev => [...prev, finalMessage]);
         setIsThinking(false);
         setIsInterviewComplete(true);
+        setIsTimerRunning(false);
       }, 1500);
     }
   };
@@ -114,6 +222,17 @@ const VirtualInterview = () => {
     };
     
     setMessages(prev => [...prev, newMessage]);
+    
+    // Analyze answer (simulated AI scoring)
+    const answerScore = Math.floor(5 + Math.random() * 6); // Random score between 5-10
+    
+    // Update score for current question
+    setInterviewScore(prev => {
+      const newScores = [...prev];
+      newScores[currentQuestion - 1] = answerScore;
+      return newScores;
+    });
+    
     setInput("");
     
     // Send next question after a delay
@@ -130,8 +249,8 @@ const VirtualInterview = () => {
         description: "Your speech has been processed.",
       });
       
-      // Simulate speech-to-text conversion
-      setInput("This is a simulated response based on voice input for the interview question.");
+      // Simulate speech-to-text conversion with more detailed response
+      setInput("Based on my previous experience at " + resumeData.company + ", I've developed strong skills in problem-solving and teamwork. I've successfully led projects with tight deadlines by focusing on clear communication and prioritization. One example was when our team had to deliver a critical feature update within a week. I organized daily stand-ups and helped break down the work into manageable tasks, which allowed us to deliver on time while maintaining code quality.");
     } else {
       setIsRecording(true);
       toast({
@@ -142,8 +261,16 @@ const VirtualInterview = () => {
   };
 
   const viewResults = () => {
+    // Calculate average interview score
+    const averageScore = interviewScore.reduce((sum, score) => sum + score, 0) / interviewScore.length;
+    
     // Store interview data in localStorage
     localStorage.setItem('interviewComplete', 'true');
+    localStorage.setItem('interviewScore', averageScore.toString());
+    
+    // Store interview answers for analysis
+    const userResponses = messages.filter(m => m.role === "user").map(m => m.content);
+    localStorage.setItem('interviewResponses', JSON.stringify(userResponses));
     
     // Navigate to results page
     navigate('/results');
@@ -156,6 +283,17 @@ const VirtualInterview = () => {
       exit={{ opacity: 0 }}
       className="w-full h-full flex flex-col"
     >
+      <div className="bg-white/80 shadow-sm p-2 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <div className="h-2 w-2 rounded-full bg-green-500"></div>
+          <span className="text-sm font-medium">Interview in progress</span>
+        </div>
+        <div className="flex items-center text-sm font-medium bg-orange-100 text-orange-800 px-3 py-1 rounded-full">
+          <Clock className="h-4 w-4 mr-1" />
+          {formatTime(interviewTimer)}
+        </div>
+      </div>
+      
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence initial={false}>
           {messages.map((message) => (

@@ -15,7 +15,7 @@ interface UploadedFile {
 
 const JOB_TITLE_SUGGESTIONS = [
   "Software Engineer",
-  "Frontend Developer",
+  "Frontend Developer", 
   "Backend Developer",
   "Full Stack Developer",
   "UX Designer",
@@ -222,10 +222,10 @@ const ResumeUpload = () => {
       
       toast({
         title: "Resume processed successfully",
-        description: "You can now proceed to the interview.",
+        description: "Proceeding to resume verification.",
       });
       
-      navigate('/interview');
+      navigate('/verification');
     }, 2000);
   };
 

@@ -1,116 +1,210 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Download, Check, X, AlertTriangle, CheckCircle, Award, TrendingUp, BarChart, LineChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  Check,
-  X,
-  ArrowLeft,
-  Download,
-  ChevronDown,
-  ChevronUp,
-  LineChart,
-  Lightbulb,
-  AlertTriangle,
-} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Results = () => {
-  const [progress, setProgress] = useState(0);
-  const [showDetail, setShowDetail] = useState<string | null>(null);
-  const [isPredicting, setIsPredicting] = useState(true);
-  const [jobScore, setJobScore] = useState(0);
+  const [resumeScore, setResumeScore] = useState(0);
+  const [assessmentScore, setAssessmentScore] = useState(0);
+  const [interviewScore, setInterviewScore] = useState(0);
+  const [overallScore, setOverallScore] = useState(0);
+  const [jobSuccess, setJobSuccess] = useState(0);
+  const [strengths, setStrengths] = useState<string[]>([]);
+  const [weaknesses, setWeaknesses] = useState<string[]>([]);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // Fetch resume data from localStorage
+  // Resume data
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
-
-  useEffect(() => {
-    // Simulate loading progress
-    const timer = setInterval(() => {
-      setProgress((prevProgress) => {
-        const newProgress = prevProgress + 10;
-        if (newProgress >= 100) {
-          clearInterval(timer);
-          setTimeout(() => {
-            setIsPredicting(false);
-            setJobScore(78); // This would be the AI prediction in a real app
-          }, 500);
-          return 100;
-        }
-        return newProgress;
-      });
-    }, 400);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
   
-  const toggleDetail = (id: string) => {
-    if (showDetail === id) {
-      setShowDetail(null);
-    } else {
-      setShowDetail(id);
-    }
+  // Generate score interpretations
+  const getScoreLabel = (score: number) => {
+    if (score >= 80) return "Excellent";
+    if (score >= 70) return "Very Good";
+    if (score >= 60) return "Good";
+    if (score >= 50) return "Average";
+    return "Needs Improvement";
   };
-
-  const scoreColor = () => {
-    if (jobScore > 80) return "text-green-500";
-    if (jobScore > 60) return "text-amber-500";
+  
+  // Get color based on score
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 70) return "text-green-500";
+    if (score >= 60) return "text-blue-500";
+    if (score >= 50) return "text-yellow-500";
     return "text-red-500";
   };
-
-  const progressColor = () => {
-    if (jobScore > 80) return "bg-green-500";
-    if (jobScore > 60) return "bg-amber-500";
+  
+  // Get progress bar color
+  const getProgressColor = (score: number) => {
+    if (score >= 80) return "bg-green-600";
+    if (score >= 70) return "bg-green-500";
+    if (score >= 60) return "bg-blue-500";
+    if (score >= 50) return "bg-yellow-500";
     return "bg-red-500";
   };
-
-  // Sample strengths and areas for improvement
-  const strengths = [
-    "Strong technical skills that match job requirements",
-    "Previous relevant experience in similar roles",
-    "Clear communication skills demonstrated during interview",
-    "Problem-solving approach shows depth and creativity"
-  ];
-
-  const improvements = [
-    "Limited experience with specific technologies mentioned in job description",
-    "Could provide more concrete examples of leadership experience",
-    "Consider elaborating more on project outcomes and metrics",
-    "Responses could better highlight alignment with company culture"
-  ];
-
-  // Sample evaluation categories
-  const evaluationCategories = [
-    {
-      id: "technical",
-      name: "Technical Skills",
-      score: 82,
-      description: "Your technical knowledge is strong, particularly in core technologies required for this role. You demonstrated good understanding of key concepts and practical application."
-    },
-    {
-      id: "communication",
-      name: "Communication Skills",
-      score: 75,
-      description: "You articulated your thoughts clearly but could improve in structuring responses more concisely. Your ability to explain complex concepts was evident."
-    },
-    {
-      id: "experience",
-      name: "Relevant Experience",
-      score: 68,
-      description: "While you have experience in related areas, there are some gaps in specific experience this role requires. Your transferable skills partially compensate for this."
-    },
-    {
-      id: "cultural",
-      name: "Cultural Fit",
-      score: 85,
-      description: "Your values and work approach appear well-aligned with the company culture. Your responses showed enthusiasm and understanding of the company's mission."
+  
+  useEffect(() => {
+    // Check if user completed the interview
+    if (!localStorage.getItem('interviewComplete')) {
+      toast({
+        title: "Interview not completed",
+        description: "Please complete the interview process first.",
+        variant: "destructive",
+      });
+      navigate('/interview');
+      return;
     }
-  ];
-
+    
+    // Simulate loading data
+    setTimeout(() => {
+      // Generate scores from localStorage or generate random scores for demo
+      const verificationResults = JSON.parse(localStorage.getItem('verificationResults') || '{"verifiedItems": 4, "totalItems": 5}');
+      const assessmentScoreVal = parseInt(localStorage.getItem('assessmentScore') || '75');
+      const interviewScoreVal = parseInt(localStorage.getItem('interviewScore') || '0') || Math.floor(60 + Math.random() * 30);
+      
+      // Calculate resume score based on verification
+      const resumeScoreVal = Math.round((verificationResults.verifiedItems / verificationResults.totalItems) * 100);
+      
+      // Calculate overall score (weighted average)
+      const overall = Math.round((resumeScoreVal * 0.3) + (assessmentScoreVal * 0.3) + (interviewScoreVal * 0.4));
+      
+      // Calculate job success probability (add small randomization)
+      const successProb = Math.min(95, Math.max(30, overall + (Math.random() * 10 - 5)));
+      
+      setResumeScore(resumeScoreVal);
+      setAssessmentScore(assessmentScoreVal);
+      setInterviewScore(interviewScoreVal);
+      setOverallScore(overall);
+      setJobSuccess(Math.round(successProb));
+      
+      // Generate strengths based on scores
+      const potentialStrengths = [
+        "Strong technical knowledge demonstrated in assessment",
+        "Clear and effective communication during interview",
+        "Excellent problem-solving approach",
+        "Well-structured resume with relevant experience",
+        "Demonstrated leadership and teamwork abilities",
+        "Ability to work under pressure and meet deadlines",
+        "Strong analytical thinking skills",
+        "Innovative approach to technical challenges",
+        "Adaptability and willingness to learn"
+      ];
+      
+      // Generate weaknesses based on scores
+      const potentialWeaknesses = [
+        "Technical knowledge gaps in some areas",
+        "Communication could be more concise and structured",
+        "Problem-solving approach needs more depth",
+        "Resume lacks some key relevant experiences",
+        "Limited examples of leadership or initiative",
+        "Time management during assessment could improve",
+        "Answers lacked specific examples in some cases",
+        "Limited experience with required technologies",
+        "Could demonstrate more enthusiasm for the role"
+      ];
+      
+      // Generate recommendations
+      const potentialRecommendations = [
+        "Focus on strengthening technical skills in areas identified during assessment",
+        "Practice structured interview responses using the STAR method",
+        "Highlight more specific achievements and metrics on your resume",
+        "Consider obtaining certifications in relevant technologies",
+        "Develop more in-depth examples of problem-solving experiences",
+        "Work on communicating technical concepts more clearly",
+        "Gain more experience with industry-standard tools and frameworks",
+        "Prepare more specific questions about the company and role",
+        "Demonstrate more initiative and leadership in your examples"
+      ];
+      
+      // Select strengths, weaknesses and recommendations based on scores
+      const numStrengths = Math.max(1, Math.floor(overall / 20));
+      const numWeaknesses = Math.max(1, Math.floor((100 - overall) / 20));
+      
+      // Shuffle and select
+      const shuffleArray = (array: string[]) => array.sort(() => Math.random() - 0.5);
+      
+      setStrengths(shuffleArray([...potentialStrengths]).slice(0, numStrengths));
+      setWeaknesses(shuffleArray([...potentialWeaknesses]).slice(0, numWeaknesses));
+      setRecommendations(shuffleArray([...potentialRecommendations]).slice(0, 3));
+      
+      setIsLoading(false);
+    }, 2000);
+  }, []);
+  
+  const downloadResults = () => {
+    const resultsData = {
+      candidateName: "Candidate",
+      position: resumeData.jobTitle,
+      company: resumeData.company,
+      date: new Date().toLocaleDateString(),
+      scores: {
+        resume: resumeScore,
+        assessment: assessmentScore,
+        interview: interviewScore,
+        overall: overallScore,
+        jobSuccess: jobSuccess
+      },
+      feedback: {
+        strengths,
+        areasForImprovement: weaknesses,
+        recommendations
+      }
+    };
+    
+    // Convert to JSON string
+    const jsonString = JSON.stringify(resultsData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `job-prediction-results-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Results downloaded",
+      description: "Your detailed results have been downloaded as a JSON file.",
+    });
+  };
+  
+  const restartProcess = () => {
+    // Clear localStorage
+    localStorage.removeItem('resumeData');
+    localStorage.removeItem('verificationResults');
+    localStorage.removeItem('assessmentScore');
+    localStorage.removeItem('interviewComplete');
+    localStorage.removeItem('interviewScore');
+    localStorage.removeItem('interviewResponses');
+    
+    // Navigate to home
+    navigate('/');
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4"></div>
+          <h3 className="text-xl font-semibold mb-2">Analyzing Your Performance</h3>
+          <p className="text-muted-foreground">
+            We're evaluating your resume, assessment, and interview responses...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -118,209 +212,170 @@ const Results = () => {
       exit={{ opacity: 0 }}
       className="w-full max-w-4xl mx-auto p-6"
     >
-      {isPredicting ? (
+      <div className="space-y-8">
         <motion.div
-          initial={{ scale: 0.95 }}
-          animate={{ scale: 1 }}
-          className="glass-card rounded-xl p-8 text-center"
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 0.2 }}
         >
-          <h2 className="text-2xl font-bold mb-6">Analyzing Your Interview Responses</h2>
-          <div className="max-w-md mx-auto">
-            <Progress value={progress} className="h-2 mb-6" />
-            <p className="text-muted-foreground">
-              Our AI is evaluating your responses against job requirements and industry standards...
-            </p>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold">Your Interview Results</h2>
+            <Button variant="outline" onClick={restartProcess}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Start New Application
+            </Button>
           </div>
           
-          <div className="mt-8 flex justify-center">
-            <div className="relative h-32 w-32">
-              <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin-slow" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <LineChart className="h-12 w-12 text-primary/70" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">Job Success Prediction</h3>
+                <TrendingUp className="h-5 w-5 text-primary" />
+              </div>
+              
+              <div className="relative pt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="text-xs font-semibold inline-block uppercase">
+                      Probability of Success
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-xs font-semibold inline-block ${getScoreColor(jobSuccess)}`}>
+                      {getScoreLabel(jobSuccess)}
+                    </span>
+                  </div>
+                </div>
+                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                  <div
+                    style={{ width: `${jobSuccess}%` }}
+                    className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${getProgressColor(jobSuccess)}`}
+                  ></div>
+                </div>
+                <div className="text-center">
+                  <span className={`text-3xl font-bold ${getScoreColor(jobSuccess)}`}>
+                    {jobSuccess}%
+                  </span>
+                  <p className="text-sm text-gray-500 mt-1">Chance of receiving a job offer</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 pt-4 border-t">
+                <h4 className="font-medium mb-2">Application for:</h4>
+                <p className="text-primary font-semibold">{resumeData.jobTitle}</p>
+                <p className="text-sm text-gray-500">{resumeData.company}</p>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">Performance Breakdown</h3>
+                <BarChart className="h-5 w-5 text-primary" />
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Resume Quality</span>
+                    <span className={`text-sm ${getScoreColor(resumeScore)}`}>{resumeScore}%</span>
+                  </div>
+                  <Progress value={resumeScore} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Technical Assessment</span>
+                    <span className={`text-sm ${getScoreColor(assessmentScore)}`}>{assessmentScore}%</span>
+                  </div>
+                  <Progress value={assessmentScore} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Interview Performance</span>
+                    <span className={`text-sm ${getScoreColor(interviewScore)}`}>{interviewScore}%</span>
+                  </div>
+                  <Progress value={interviewScore} className="h-2" />
+                </div>
+                
+                <div className="pt-2 mt-2 border-t">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-semibold">Overall Score</span>
+                    <span className={`text-sm font-semibold ${getScoreColor(overallScore)}`}>{overallScore}%</span>
+                  </div>
+                  <Progress value={overallScore} className={`h-3 ${getProgressColor(overallScore)}`} />
+                </div>
               </div>
             </div>
           </div>
         </motion.div>
-      ) : (
-        <div className="space-y-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="glass-card rounded-xl p-8"
-          >
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Interview Results</h2>
-                <p className="text-muted-foreground">
-                  For {resumeData.jobTitle} at {resumeData.company}
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="relative inline-block">
-                  <svg className="w-32 h-32">
-                    <circle
-                      className="text-muted stroke-current"
-                      strokeWidth="6"
-                      stroke="currentColor"
-                      fill="transparent"
-                      r="58"
-                      cx="64"
-                      cy="64"
-                    />
-                    <circle
-                      className={`${progressColor()} stroke-current`}
-                      strokeWidth="6"
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="transparent"
-                      r="58"
-                      cx="64"
-                      cy="64"
-                      strokeDasharray="364.425"
-                      strokeDashoffset={364.425 * (1 - jobScore / 100)}
-                    />
-                  </svg>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <span className={`text-4xl font-bold ${scoreColor()}`}>{jobScore}%</span>
-                  </div>
-                </div>
-                <p className="font-semibold mt-2">Success Prediction</p>
-              </div>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        >
+          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div className="flex items-center text-green-600 mb-4">
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              <h3 className="text-lg font-semibold">Strengths</h3>
             </div>
-            
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center">
-                  <Check className="h-5 w-5 text-green-500 mr-2" />
-                  Key Strengths
-                </h3>
-                <ul className="space-y-2">
-                  {strengths.map((strength, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-start"
-                    >
-                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 shrink-0" />
-                      <span>{strength}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center">
-                  <Lightbulb className="h-5 w-5 text-amber-500 mr-2" />
-                  Areas for Improvement
-                </h3>
-                <ul className="space-y-2">
-                  {improvements.map((improvement, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 + 0.2 }}
-                      className="flex items-start"
-                    >
-                      <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 mt-0.5 shrink-0" />
-                      <span>{improvement}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="glass-card rounded-xl overflow-hidden"
-          >
-            <div className="p-6 border-b">
-              <h3 className="text-xl font-bold">Detailed Evaluation</h3>
-            </div>
-            
-            <div className="divide-y">
-              {evaluationCategories.map((category) => (
-                <div key={category.id} className="p-6">
-                  <div 
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleDetail(category.id)}
-                  >
-                    <div className="flex items-center">
-                      <h4 className="font-semibold">{category.name}</h4>
-                      <div className={`ml-4 px-2 py-1 rounded-full text-xs font-medium ${
-                        category.score > 80 
-                          ? "bg-green-100 text-green-800" 
-                          : category.score > 60 
-                            ? "bg-amber-100 text-amber-800" 
-                            : "bg-red-100 text-red-800"
-                      }`}>
-                        {category.score}%
-                      </div>
-                    </div>
-                    {showDetail === category.id ? (
-                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-                  
-                  {showDetail === category.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-4 text-muted-foreground"
-                    >
-                      <p>{category.description}</p>
-                      <Progress value={category.score} className="h-1.5 mt-2" />
-                    </motion.div>
-                  )}
-                </div>
+            <ul className="space-y-3">
+              {strengths.map((strength, index) => (
+                <li key={index} className="flex">
+                  <Check className="h-5 w-5 text-green-500 mr-2 shrink-0" />
+                  <span className="text-sm">{strength}</span>
+                </li>
               ))}
-            </div>
-          </motion.div>
+            </ul>
+          </div>
           
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-between"
-          >
-            <Button 
-              variant="outline"
-              onClick={() => navigate("/interview")}
-              className="flex items-center"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Interview
-            </Button>
-            
-            <div className="flex gap-4">
-              <Button
-                variant="outline"
-                className="flex items-center"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download Report
-              </Button>
-              
-              <Button
-                onClick={() => navigate("/")}
-                className="button-glow"
-              >
-                Start New Assessment
-              </Button>
+          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div className="flex items-center text-red-600 mb-4">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              <h3 className="text-lg font-semibold">Areas for Improvement</h3>
             </div>
-          </motion.div>
-        </div>
-      )}
+            <ul className="space-y-3">
+              {weaknesses.map((weakness, index) => (
+                <li key={index} className="flex">
+                  <X className="h-5 w-5 text-red-500 mr-2 shrink-0" />
+                  <span className="text-sm">{weakness}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div className="flex items-center text-blue-600 mb-4">
+              <Award className="h-5 w-5 mr-2" />
+              <h3 className="text-lg font-semibold">Recommendations</h3>
+            </div>
+            <ul className="space-y-3">
+              {recommendations.map((recommendation, index) => (
+                <li key={index} className="flex">
+                  <TrendingUp className="h-5 w-5 text-blue-500 mr-2 shrink-0" />
+                  <span className="text-sm">{recommendation}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </motion.div>
+        
+        <motion.div
+          initial={{ y: 20 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="flex justify-center mt-8"
+        >
+          <Button 
+            onClick={downloadResults} 
+            size="lg"
+            className="button-glow"
+          >
+            <Download className="mr-2 h-5 w-5" /> Download Detailed Results
+          </Button>
+        </motion.div>
+      </div>
     </motion.div>
   );
 };
