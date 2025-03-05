@@ -14,46 +14,199 @@ interface Question {
   correctAnswer: number;
 }
 
-// Sample technical assessment questions
-const technicalQuestions: Question[] = [
-  {
-    id: 1,
-    question: "Which data structure uses LIFO (Last In First Out)?",
-    options: ["Queue", "Stack", "Linked List", "Tree"],
-    correctAnswer: 1,
-  },
-  {
-    id: 2,
-    question: "What is the time complexity of binary search?",
-    options: ["O(1)", "O(n)", "O(log n)", "O(n log n)"],
-    correctAnswer: 2,
-  },
-  {
-    id: 3,
-    question: "Which of the following is not a JavaScript framework?",
-    options: ["React", "Angular", "Django", "Vue"],
-    correctAnswer: 2,
-  },
-  {
-    id: 4, 
-    question: "What does CSS stand for?",
-    options: [
-      "Computer Style Sheets", 
-      "Creative Style System", 
-      "Cascading Style Sheets", 
-      "Colorful Style Sheets"
+// Generate technical assessment questions based on job title and package
+const generateTechnicalQuestions = (jobTitle: string, packageType: string): Question[] => {
+  // Common questions across all roles
+  const commonQuestions: Question[] = [
+    {
+      id: 1,
+      question: "Which design pattern is commonly used for creating a single instance of a class?",
+      options: ["Factory", "Singleton", "Observer", "Strategy"],
+      correctAnswer: 1,
+    },
+    {
+      id: 2,
+      question: "What is the time complexity of binary search?",
+      options: ["O(1)", "O(n)", "O(log n)", "O(n log n)"],
+      correctAnswer: 2,
+    }
+  ];
+  
+  // Role-specific questions
+  const roleQuestions: {[key: string]: Question[]} = {
+    "Software Engineer": [
+      {
+        id: 101,
+        question: "Which of the following is NOT a principle of SOLID?",
+        options: ["Single Responsibility", "Open-Closed", "Liskov Substitution", "Duplicate Reduction"],
+        correctAnswer: 3,
+      },
+      {
+        id: 102,
+        question: "What is the main purpose of a virtual function in OOP?",
+        options: ["To improve performance", "To enable function overriding", "To reduce memory usage", "To prevent inheritance"],
+        correctAnswer: 1,
+      },
+      {
+        id: 103,
+        question: "Which algorithm is typically used for shortest path finding?",
+        options: ["Bubble Sort", "Dijkstra's Algorithm", "Quick Sort", "Binary Search"],
+        correctAnswer: 1,
+      }
     ],
-    correctAnswer: 2,
-  },
-  {
-    id: 5,
-    question: "Which of these is not a valid HTTP method?",
-    options: ["GET", "POST", "DELETE", "FETCH"],
-    correctAnswer: 3,
+    "Frontend Developer": [
+      {
+        id: 201,
+        question: "Which CSS property is used to create space between inline elements?",
+        options: ["margin", "padding", "spacing", "gap"],
+        correctAnswer: 0,
+      },
+      {
+        id: 202,
+        question: "What is the role of the 'key' prop in React lists?",
+        options: ["Encryption", "Performance optimization", "Styling", "Animation control"],
+        correctAnswer: 1,
+      },
+      {
+        id: 203,
+        question: "Which hook is used for side effects in React?",
+        options: ["useState", "useEffect", "useContext", "useReducer"],
+        correctAnswer: 1,
+      }
+    ],
+    "Data Scientist": [
+      {
+        id: 301,
+        question: "What technique is used to prevent overfitting in machine learning models?",
+        options: ["Feature Engineering", "Regularization", "Data Augmentation", "All of the above"],
+        correctAnswer: 3,
+      },
+      {
+        id: 302,
+        question: "Which algorithm is NOT a classification algorithm?",
+        options: ["Random Forest", "Logistic Regression", "K-means", "Support Vector Machine"],
+        correctAnswer: 2,
+      },
+      {
+        id: 303,
+        question: "What does RMSE stand for in model evaluation?",
+        options: ["Random Mean Squared Error", "Root Mean Squared Error", "Relative Mean Squared Estimation", "Recursive Model Squared Evaluation"],
+        correctAnswer: 1,
+      }
+    ],
+    "Product Manager": [
+      {
+        id: 401,
+        question: "What is the purpose of an MRD in product management?",
+        options: ["Market Requirements Document", "Minimal Responsive Design", "Market Research Data", "Model Revision Document"],
+        correctAnswer: 0,
+      },
+      {
+        id: 402,
+        question: "Which of the following is typically NOT part of a product roadmap?",
+        options: ["Feature timeline", "Resource allocation", "Employee vacation schedule", "Strategic goals"],
+        correctAnswer: 2,
+      },
+      {
+        id: 403,
+        question: "What does MVP stand for in product development?",
+        options: ["Most Valuable Product", "Minimum Viable Product", "Multiple Version Production", "Maximum Value Proposition"],
+        correctAnswer: 1,
+      }
+    ]
+  };
+  
+  // Package-specific questions (increasing difficulty based on package level)
+  const packageQuestions: {[key: string]: Question[]} = {
+    "entry": [
+      {
+        id: 1001,
+        question: "What is the purpose of a version control system?",
+        options: ["To track and manage changes to code", "To compile code faster", "To automatically fix bugs", "To deploy applications"],
+        correctAnswer: 0,
+      },
+      {
+        id: 1002,
+        question: "What does API stand for?",
+        options: ["Application Programming Interface", "Automated Program Integration", "Application Process Interaction", "Advanced Programming Input"],
+        correctAnswer: 0,
+      }
+    ],
+    "mid": [
+      {
+        id: 2001,
+        question: "What is the difference between abstract classes and interfaces?",
+        options: [
+          "Abstract classes can have method implementations, interfaces cannot", 
+          "Interfaces can be instantiated, abstract classes cannot", 
+          "A class can inherit multiple abstract classes but only one interface", 
+          "Interfaces are faster than abstract classes"
+        ],
+        correctAnswer: 0,
+      },
+      {
+        id: 2002,
+        question: "What is the purpose of a load balancer in a distributed system?",
+        options: [
+          "To distribute network traffic across multiple servers", 
+          "To reduce code size", 
+          "To optimize database queries", 
+          "To cache frequently accessed data"
+        ],
+        correctAnswer: 0,
+      }
+    ],
+    "senior": [
+      {
+        id: 3001,
+        question: "Which of the following is NOT a common microservices design pattern?",
+        options: [
+          "Circuit Breaker", 
+          "API Gateway", 
+          "Saga", 
+          "Monolithic Layering"
+        ],
+        correctAnswer: 3,
+      },
+      {
+        id: 3002,
+        question: "In the context of system design, what does CAP theorem state?",
+        options: [
+          "A distributed system cannot simultaneously provide Consistency, Availability, and Partition tolerance", 
+          "Code Analysis and Programming must be balanced", 
+          "Complex Applications Perform poorly in distributed systems", 
+          "Caching Accelerates Performance in all systems"
+        ],
+        correctAnswer: 0,
+      }
+    ]
+  };
+  
+  // Get role-specific questions or default to Software Engineer
+  const specificRoleQuestions = roleQuestions[jobTitle] || roleQuestions["Software Engineer"];
+  
+  // Get package level questions
+  const levelQuestions = packageQuestions[packageType] || packageQuestions["mid"];
+  
+  // Combine all questions and return a subset
+  const allQuestions = [...commonQuestions, ...specificRoleQuestions, ...levelQuestions];
+  
+  // Shuffle and select questions to ensure uniqueness
+  return shuffleArray(allQuestions).slice(0, 5);
+};
+
+// Helper function to shuffle array
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
-];
+  return newArray;
+};
 
 const OnlineAssessment = () => {
+  const [technicalQuestions, setTechnicalQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -64,6 +217,35 @@ const OnlineAssessment = () => {
   
   // Resume data from localStorage
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
+  const selectedPackage = localStorage.getItem('selectedPackage') || 'entry';
+  
+  // Initialize questions
+  useEffect(() => {
+    // Generate questions based on job title and package
+    const questions = generateTechnicalQuestions(resumeData.jobTitle, selectedPackage);
+    setTechnicalQuestions(questions);
+    
+    // Check if user has completed earlier steps
+    if (!localStorage.getItem('resumeData')) {
+      toast({
+        title: "Resume not uploaded",
+        description: "Please upload your resume first.",
+        variant: "destructive",
+      });
+      navigate('/upload');
+      return;
+    }
+
+    if (!localStorage.getItem('selectedPackage')) {
+      toast({
+        title: "Package not selected",
+        description: "Please select a package first.",
+        variant: "destructive",
+      });
+      navigate('/package-selection');
+      return;
+    }
+  }, []);
   
   // Time formatting
   const formatTime = (seconds: number) => {
@@ -132,7 +314,7 @@ const OnlineAssessment = () => {
       exit={{ opacity: 0 }}
       className="w-full h-full flex flex-col"
     >
-      {!isAssessmentComplete ? (
+      {!isAssessmentComplete && technicalQuestions.length > 0 ? (
         <div className="flex-1 flex flex-col p-6">
           <div className="mb-6 flex justify-between items-center">
             <div className="text-sm font-medium">
@@ -194,7 +376,7 @@ const OnlineAssessment = () => {
             </Button>
           </div>
         </div>
-      ) : (
+      ) : isAssessmentComplete ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -222,6 +404,13 @@ const OnlineAssessment = () => {
               Continue to Interview <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </motion.div>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center p-6">
+            <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Loading assessment questions...</p>
+          </div>
         </div>
       )}
     </motion.div>

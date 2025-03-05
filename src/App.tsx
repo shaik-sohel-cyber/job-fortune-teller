@@ -12,6 +12,7 @@ import ResultsPage from "@/pages/ResultsPage";
 import NotFound from "@/pages/NotFound";
 import VerificationPage from "@/pages/VerificationPage";
 import AssessmentPage from "@/pages/AssessmentPage";
+import PackageSelection from "@/components/PackageSelection";
 
 // Import framer-motion for animations
 import { LazyMotion, domAnimation } from "framer-motion";
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/verification" element={<VerificationPage />} />
+              <Route path="/package-selection" element={<PackageSelection />} />
               <Route path="/assessment" element={<AssessmentPage />} />
               <Route path="/interview" element={<Interview />} />
               <Route path="/results" element={<ResultsPage />} />

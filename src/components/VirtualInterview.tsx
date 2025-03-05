@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, MicOff, Send, User, CornerDownRight, ArrowRight, Clock } from "lucide-react";
+import { Mic, MicOff, Send, User, ArrowRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Message {
@@ -14,51 +14,153 @@ interface Message {
   timestamp: Date;
 }
 
-// Enhanced interview questions based on job role and resume keywords
-const getInterviewQuestions = (jobTitle: string) => {
+// Enhanced interview questions based on job role, resume keywords, and package level
+const getInterviewQuestions = (jobTitle: string, packageLevel: string) => {
+  // Common questions for all roles and packages
   const commonQuestions = [
     "Tell me about yourself and your background.",
     "What made you interested in applying for this position?",
-    "How would you handle a situation where a project deadline is at risk?",
-    "What do you consider your greatest professional achievement?",
-    "How do you stay updated with the latest trends in your field?",
-    "Tell me about a time when you had to learn a new skill quickly for a project.",
-    "How do you handle feedback or criticism?",
     "Where do you see yourself professionally in 5 years?",
-    "What makes you the right candidate for this position?",
-    "Do you have any questions for me about the role or company?"
+    "Tell me about a time when you had to learn a new skill quickly for a project.",
+    "How do you handle feedback or criticism?"
   ];
 
-  // Technical questions based on job title
-  const technicalQuestions: {[key: string]: string[]} = {
-    "Software Engineer": [
-      "Can you explain your approach to writing clean and maintainable code?",
-      "Describe a complex technical problem you solved and how you approached it.",
-      "How do you test your code to ensure it's working correctly?",
-      "What version control systems are you familiar with, and what's your workflow?",
-      "How do you handle technical debt in your projects?"
+  // Package-level specific behavioral questions
+  const packageBehavioralQuestions: {[key: string]: string[]} = {
+    "entry": [
+      "Tell me about a time you faced a challenge in school or early career.",
+      "How do you prioritize your tasks when you have multiple assignments?",
+      "What is your approach to learning new technologies?",
+      "How do you collaborate with others in a team setting?",
+      "Tell me about a project you worked on that you're proud of."
     ],
-    "Frontend Developer": [
-      "What frontend frameworks have you worked with and which do you prefer?",
-      "How do you optimize website performance?",
-      "Explain your approach to responsive design.",
-      "How do you ensure accessibility in your web applications?",
-      "What strategies do you use for state management in complex applications?"
+    "mid": [
+      "Describe a situation where you had to resolve a conflict within your team.",
+      "Tell me about a time you had to meet a tight deadline. How did you manage it?",
+      "How have you handled a situation where requirements changed mid-project?",
+      "Tell me about a time you had to take initiative without being asked.",
+      "Describe how you've mentored junior team members."
     ],
-    "Data Scientist": [
-      "What machine learning models have you implemented in real projects?",
-      "How do you handle imbalanced datasets?",
-      "Explain your approach to feature engineering.",
-      "How do you evaluate the performance of your models?",
-      "How do you communicate technical results to non-technical stakeholders?"
+    "senior": [
+      "Tell me about a strategic decision you made that impacted your team or organization.",
+      "How have you influenced technical decisions in your previous roles?",
+      "Describe a situation where you had to navigate organizational politics to achieve a goal.",
+      "Tell me about a time you had to manage up to get buy-in for an important initiative.",
+      "How have you built and led high-performing teams?"
     ]
   };
 
+  // Technical questions based on job title and package level
+  const technicalQuestions: {[key: string]: {[key: string]: string[]}} = {
+    "Software Engineer": {
+      "entry": [
+        "What programming languages are you most comfortable with?",
+        "Can you describe your approach to debugging code?",
+        "What do you understand about version control systems?",
+        "Explain the difference between arrays and linked lists."
+      ],
+      "mid": [
+        "How do you ensure your code is maintainable and scalable?",
+        "Describe your experience with microservices architecture.",
+        "How do you approach optimizing application performance?",
+        "What design patterns have you used in your projects?"
+      ],
+      "senior": [
+        "How do you make architectural decisions when designing a new system?",
+        "Describe your approach to implementing security best practices in application development.",
+        "How do you guide technology choices in a rapid-growth environment?",
+        "Explain how you would design a system to handle millions of concurrent users."
+      ]
+    },
+    "Frontend Developer": {
+      "entry": [
+        "What frameworks and libraries have you worked with?",
+        "How do you approach responsive design?",
+        "Explain the concept of the DOM and how JavaScript interacts with it.",
+        "What are CSS preprocessors and have you used any?"
+      ],
+      "mid": [
+        "How do you manage state in complex frontend applications?",
+        "Describe your experience with performance optimization for web applications.",
+        "How do you approach testing frontend code?",
+        "Explain your strategies for ensuring accessibility in your applications."
+      ],
+      "senior": [
+        "How do you architect large-scale frontend applications?",
+        "Describe your approach to creating and maintaining component libraries.",
+        "How do you stay current with rapidly evolving frontend technologies?",
+        "What strategies do you use for client-side performance monitoring and improvement?"
+      ]
+    },
+    "Data Scientist": {
+      "entry": [
+        "What statistical methods are you familiar with?",
+        "Describe your experience with Python or R for data analysis.",
+        "How do you approach data cleaning and preprocessing?",
+        "What visualization tools have you used?"
+      ],
+      "mid": [
+        "Explain how you would handle a dataset with missing values.",
+        "What machine learning algorithms have you implemented in real projects?",
+        "How do you evaluate the performance of your models?",
+        "Describe your experience with feature engineering."
+      ],
+      "senior": [
+        "How do you design an end-to-end machine learning pipeline?",
+        "Describe how you've deployed models to production environments.",
+        "How do you approach model monitoring and maintenance over time?",
+        "Tell me about a complex data science problem you solved that had significant business impact."
+      ]
+    },
+    "Product Manager": {
+      "entry": [
+        "How do you gather and prioritize user requirements?",
+        "What tools do you use for project tracking?",
+        "How do you communicate product features to different stakeholders?",
+        "Describe your approach to user research."
+      ],
+      "mid": [
+        "How do you balance technical constraints with business goals?",
+        "Describe how you've made data-driven product decisions.",
+        "How do you collaborate with engineering teams on implementation?",
+        "Tell me about a product launch you managed. What went well and what would you improve?"
+      ],
+      "senior": [
+        "How do you develop product strategy that aligns with company objectives?",
+        "Describe how you've built and managed product roadmaps for multiple product lines.",
+        "How do you measure product success beyond traditional metrics?",
+        "Tell me about a product pivot you led. What was the rationale and what were the outcomes?"
+      ]
+    }
+  };
+
   // Get role-specific questions or default to Software Engineer if role not found
-  const roleQuestions = technicalQuestions[jobTitle] || technicalQuestions["Software Engineer"];
+  const roleKey = Object.keys(technicalQuestions).find(key => 
+    jobTitle.toLowerCase().includes(key.toLowerCase())
+  ) || "Software Engineer";
   
-  // Combine common and role-specific questions
-  return [...commonQuestions.slice(0, 5), ...roleQuestions, ...commonQuestions.slice(5)];
+  const roleQuestions = technicalQuestions[roleKey][packageLevel] || technicalQuestions[roleKey]["mid"];
+  const behavioralQuestions = packageBehavioralQuestions[packageLevel] || packageBehavioralQuestions["mid"];
+  
+  // Combine and shuffle questions for uniqueness
+  return shuffleArray([
+    ...commonQuestions.slice(0, 2),
+    ...behavioralQuestions.slice(0, 3),
+    ...roleQuestions,
+    ...commonQuestions.slice(2, 4),
+    ...behavioralQuestions.slice(3),
+    commonQuestions[4]
+  ]);
+};
+
+// Helper function to shuffle array
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
 };
 
 const VirtualInterview = () => {
@@ -88,6 +190,7 @@ const VirtualInterview = () => {
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
   const verificationResults = JSON.parse(localStorage.getItem('verificationResults') || 'null');
   const assessmentScore = parseInt(localStorage.getItem('assessmentScore') || '0');
+  const selectedPackage = localStorage.getItem('selectedPackage') || 'entry';
 
   useEffect(() => {
     // Check if user has completed earlier steps
@@ -120,19 +223,37 @@ const VirtualInterview = () => {
       navigate('/assessment');
       return;
     }
+
+    if (!localStorage.getItem('selectedPackage')) {
+      toast({
+        title: "Package not selected",
+        description: "Please select a package first.",
+        variant: "destructive",
+      });
+      navigate('/package-selection');
+      return;
+    }
     
-    // Get job-specific interview questions
-    const questions = getInterviewQuestions(resumeData.jobTitle);
+    // Get job-specific interview questions based on package level
+    const questions = getInterviewQuestions(resumeData.jobTitle, selectedPackage);
     setInterviewQuestions(questions);
     
     // Initialize interview scores array
     setInterviewScore(new Array(questions.length).fill(0));
     
-    // Welcome message with personalized details
+    // Personalized welcome message with package details
+    const packageNames = {
+      'entry': 'Entry Level',
+      'mid': 'Mid Level',
+      'senior': 'Senior Level'
+    };
+    
+    const packageName = packageNames[selectedPackage as keyof typeof packageNames] || 'Entry Level';
+    
     const welcomeMessage: Message = {
       id: "welcome",
       role: "assistant",
-      content: `Welcome to your virtual interview for the ${resumeData.jobTitle} position at ${resumeData.company}. I'll be asking you a series of questions to evaluate your fit for this role. Based on your resume verification and technical assessment, we're looking forward to learning more about your experience and skills. Please answer thoroughly and provide specific examples when possible.`,
+      content: `Welcome to your virtual interview for the ${resumeData.jobTitle} position at ${resumeData.company}. I'll be asking you a series of questions to evaluate your fit for this ${packageName} role. Based on your resume verification and technical assessment score of ${assessmentScore}%, we're looking forward to learning more about your experience and skills. Please answer thoroughly and provide specific examples when possible.`,
       timestamp: new Date(),
     };
     
@@ -199,7 +320,7 @@ const VirtualInterview = () => {
         const finalMessage: Message = {
           id: "interview-complete",
           role: "assistant",
-          content: "Thank you for completing the interview. I appreciate your thoughtful responses and examples. Based on your interview, technical assessment, and resume, I'll now provide a comprehensive evaluation of your candidacy. Click the 'View Results' button when you're ready to see your personalized feedback and job success prediction.",
+          content: "Thank you for completing the interview. I appreciate your thoughtful responses and examples. Based on your interview, technical assessment, and resume, I'll now provide a comprehensive evaluation of your candidacy for the selected package level. Click the 'View Results' button when you're ready to see your personalized feedback and job success prediction.",
           timestamp: new Date(),
         };
         
@@ -223,8 +344,16 @@ const VirtualInterview = () => {
     
     setMessages(prev => [...prev, newMessage]);
     
-    // Analyze answer (simulated AI scoring)
-    const answerScore = Math.floor(5 + Math.random() * 6); // Random score between 5-10
+    // Analyze answer (simulated AI scoring with more variance based on package level)
+    // Senior level has higher expectations
+    const baseScore = 5;
+    const packageMultiplier = selectedPackage === 'senior' ? 0.5 : (selectedPackage === 'mid' ? 0.7 : 0.9);
+    const answerLength = input.length;
+    const randomFactor = Math.random() * 2;
+    
+    // Score calculation - longer answers generally score better, with package-based scaling
+    const lengthScore = Math.min(5, Math.floor(answerLength / 100));
+    const answerScore = Math.floor(baseScore + lengthScore * packageMultiplier + randomFactor);
     
     // Update score for current question
     setInterviewScore(prev => {
@@ -241,6 +370,23 @@ const VirtualInterview = () => {
     }, 500);
   };
 
+  const generateRealisticResponse = () => {
+    // Generate more realistic and personalized responses based on job title and package
+    const jobSpecificContent = [
+      `Based on my experience with ${resumeData.company}, I've developed strong skills in problem-solving and teamwork. I've successfully led projects with tight deadlines by focusing on clear communication and prioritization.`,
+      `In my previous role, I implemented an automated testing framework that reduced our QA time by 40%. This required collaborating closely with both development and business teams to ensure all requirements were met.`,
+      `I believe my background in ${resumeData.jobTitle.toLowerCase().includes("data") ? "data analysis and machine learning" : resumeData.jobTitle.toLowerCase().includes("front") ? "UI/UX design and frontend frameworks" : "software architecture and system design"} makes me particularly well-suited for this position.`
+    ];
+    
+    const packageSpecificContent = {
+      'entry': "I'm eager to grow my skills and take on new challenges in this role. I'm a quick learner and thrive in collaborative environments.",
+      'mid': "Having worked in similar roles for several years, I've developed a strong technical foundation and now I'm looking to expand my impact and take on more responsibility.",
+      'senior': "Throughout my career, I've led multiple teams and high-impact projects. I focus on mentoring junior team members while also driving technical excellence and innovation."
+    };
+    
+    return `${jobSpecificContent[Math.floor(Math.random() * jobSpecificContent.length)]} ${packageSpecificContent[selectedPackage as keyof typeof packageSpecificContent]}`;
+  };
+
   const toggleRecording = () => {
     if (isRecording) {
       setIsRecording(false);
@@ -249,8 +395,8 @@ const VirtualInterview = () => {
         description: "Your speech has been processed.",
       });
       
-      // Simulate speech-to-text conversion with more detailed response
-      setInput("Based on my previous experience at " + resumeData.company + ", I've developed strong skills in problem-solving and teamwork. I've successfully led projects with tight deadlines by focusing on clear communication and prioritization. One example was when our team had to deliver a critical feature update within a week. I organized daily stand-ups and helped break down the work into manageable tasks, which allowed us to deliver on time while maintaining code quality.");
+      // Simulate speech-to-text conversion with more detailed personalized response
+      setInput(generateRealisticResponse());
     } else {
       setIsRecording(true);
       toast({
