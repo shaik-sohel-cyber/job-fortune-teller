@@ -44,6 +44,8 @@ const Header = () => {
             { path: "/", label: "Home" },
             { path: "/upload", label: "Upload Resume" },
             { path: "/interview", label: "Interview" },
+            { path: "/about", label: "About Us" },
+            { path: "/contact", label: "Contact" },
           ].map((item) => (
             <div key={item.path} className="relative">
               <Button
