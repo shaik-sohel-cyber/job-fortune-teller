@@ -15,15 +15,207 @@ interface Question {
 }
 
 const generateTechnicalQuestions = (jobTitle: string, packageType: string): Question[] => {
-  // ... keep existing code (generateTechnicalQuestions function)
+  const questionsBase: Question[] = [
+    {
+      id: 1,
+      question: "What is the time complexity of accessing an element in an array by its index?",
+      options: ["O(1)", "O(n)", "O(log n)", "O(n log n)"],
+      correctAnswer: 0,
+      difficulty: "easy",
+    },
+    {
+      id: 2,
+      question: "Which of the following is NOT a principle of Object-Oriented Programming?",
+      options: ["Inheritance", "Polymorphism", "Encapsulation", "Compilation"],
+      correctAnswer: 3,
+      difficulty: "easy",
+    },
+    {
+      id: 3,
+      question: "What is the purpose of the 'useEffect' hook in React?",
+      options: [
+        "To manage state variables",
+        "To perform side effects in functional components",
+        "To define the component's template",
+        "To handle events",
+      ],
+      correctAnswer: 1,
+      difficulty: "easy",
+    },
+    {
+      id: 4,
+      question: "What is the difference between '==' and '===' in JavaScript?",
+      options: [
+        "'==' compares values, '===' compares values and types",
+        "'==' compares values and types, '===' compares values",
+        "There is no difference",
+        "'===' is used for strings, '==' is used for numbers",
+      ],
+      correctAnswer: 0,
+      difficulty: "medium",
+    },
+    {
+      id: 5,
+      question: "Explain the concept of 'closures' in JavaScript.",
+      options: [
+        "Functions that are defined inside other functions",
+        "Functions that have access to variables from their outer scope even after the outer function has finished executing",
+        "Functions that are used to close the program",
+        "Functions that are automatically executed",
+      ],
+      correctAnswer: 1,
+      difficulty: "medium",
+    },
+    {
+      id: 6,
+      question: "What is the purpose of the 'try...catch' statement in programming?",
+      options: [
+        "To define a loop",
+        "To handle exceptions and errors",
+        "To declare variables",
+        "To optimize code",
+      ],
+      correctAnswer: 1,
+      difficulty: "medium",
+    },
+    {
+      id: 7,
+      question: "Describe the difference between 'stack' and 'queue' data structures.",
+      options: [
+        "Stack is LIFO, queue is FIFO",
+        "Stack is FIFO, queue is LIFO",
+        "Stack and queue are the same",
+        "Stack is used for numbers, queue is used for strings",
+      ],
+      correctAnswer: 0,
+      difficulty: "medium",
+    },
+    {
+      id: 8,
+      question: "What is the role of the 'Virtual DOM' in React?",
+      options: [
+        "To replace the actual DOM",
+        "To optimize DOM updates by minimizing direct manipulations",
+        "To handle user events",
+        "To manage component state",
+      ],
+      correctAnswer: 1,
+      difficulty: "medium",
+    },
+    {
+      id: 9,
+      question: "Explain the concept of 'memoization' and how it can improve performance.",
+      options: [
+        "A technique to reduce memory usage",
+        "A technique to cache the results of expensive function calls and return the cached result when the same inputs occur again",
+        "A technique to compress code",
+        "A technique to improve code readability",
+      ],
+      correctAnswer: 1,
+      difficulty: "hard",
+    },
+    {
+      id: 10,
+      question: "What is the difference between 'asynchronous' and 'synchronous' execution?",
+      options: [
+        "Asynchronous execution blocks the program, synchronous execution does not",
+        "Asynchronous execution does not block the program, synchronous execution blocks the program",
+        "There is no difference",
+        "Asynchronous is faster than synchronous",
+      ],
+      correctAnswer: 1,
+      difficulty: "hard",
+    },
+    {
+      id: 11,
+      question: "Describe the SOLID principles of Object-Oriented Design.",
+      options: [
+        "Single responsibility, open-closed, Liskov substitution, interface segregation, dependency inversion",
+        "Simple, organized, layered, integrated, detailed",
+        "Structured, optimized, linked, interactive, dynamic",
+        "Stable, observable, logical, intuitive, descriptive",
+      ],
+      correctAnswer: 0,
+      difficulty: "hard",
+    },
+    {
+      id: 12,
+      question: "Explain the concept of 'microservices' and their advantages.",
+      options: [
+        "A software development approach where an application is structured as a collection of small, autonomous services, modeled around a business domain",
+        "A technique to write very small pieces of code",
+        "A way to reduce the size of the application",
+        "A method to improve code readability",
+      ],
+      correctAnswer: 0,
+      difficulty: "hard",
+    },
+  ];
+
+  // Filter questions based on job title
+  let relevantQuestions: Question[] = [...questionsBase];
+
+  if (jobTitle.toLowerCase().includes("frontend")) {
+    relevantQuestions = questionsBase.filter((q) =>
+      [3, 4, 5, 8].includes(q.id)
+    );
+  } else if (jobTitle.toLowerCase().includes("data scientist")) {
+    relevantQuestions = questionsBase.filter((q) =>
+      [6, 9, 10].includes(q.id)
+    );
+  } else if (jobTitle.toLowerCase().includes("product manager")) {
+    relevantQuestions = questionsBase.filter((q) =>
+      [2, 7, 11].includes(q.id)
+    );
+  }
+
+  // Adjust difficulty based on package type
+  let adjustedQuestions: Question[] = relevantQuestions.map((q) => {
+    if (packageType === "entry") {
+      return { ...q, difficulty: "easy" };
+    } else if (packageType === "mid") {
+      return q.difficulty === "easy" ? q : { ...q, difficulty: "medium" };
+    } else {
+      return q;
+    }
+  });
+
+  // Shuffle and limit the number of questions
+  const shuffledQuestions = shuffleArray(adjustedQuestions).slice(0, 5);
+
+  return shuffledQuestions; // Adding this return statement to fix the error
 };
 
 const shuffleArray = <T,>(array: T[]): T[] => {
-  // ... keep existing code (shuffleArray function)
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray; // Adding this return statement to fix the error
 };
 
 const getCompanyCutoffScore = (company: string, jobTitle: string, packageType: string): number => {
-  // ... keep existing code (getCompanyCutoffScore function)
+  const companyScores: { [key: string]: number } = {
+    "Tech Company": 75,
+    "Innovation Inc.": 80,
+    "Global Solutions": 70,
+    "Pioneer Corp": 85,
+  };
+
+  let baseScore = companyScores[company] || 70;
+
+  if (packageType === "mid") {
+    baseScore += 5;
+  } else if (packageType === "premium") {
+    baseScore += 10;
+  }
+
+  if (jobTitle.toLowerCase().includes("engineer")) {
+    baseScore += 5;
+  }
+
+  return baseScore; // Adding this return statement to fix the error
 };
 
 const OnlineAssessment = () => {
