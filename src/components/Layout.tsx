@@ -15,9 +15,9 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="relative min-h-screen bg-background">
       {/* Background elements */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/5 rounded-full filter blur-3xl animate-float" />
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-accent/5 rounded-full filter blur-3xl animate-float" />
         <div className="absolute bottom-0 right-0 w-72 h-72 bg-accent/5 rounded-full filter blur-3xl animate-float" style={{ animationDelay: "-2s" }} />
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl animate-float" style={{ animationDelay: "-4s" }} />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/3 rounded-full filter blur-3xl animate-float" style={{ animationDelay: "-4s" }} />
         <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-accent/5 rounded-full filter blur-3xl animate-float" style={{ animationDelay: "-6s" }} />
       </div>
       

@@ -23,7 +23,7 @@ const Header = () => {
   return (
     <motion.header 
       className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300 ${
-        scrolled ? "bg-white/80 backdrop-blur-md shadow-md" : "bg-transparent"
+        scrolled ? "bg-black/80 backdrop-blur-md shadow-md" : "bg-transparent"
       }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -50,21 +50,12 @@ const Header = () => {
             <div key={item.path} className="relative">
               <Button
                 variant="ghost"
-                className={`text-base font-medium ${isActive(item.path) ? "text-primary" : "text-foreground"}`}
+                className={`text-base font-medium neon-tab ${isActive(item.path) ? "text-accent" : "text-foreground"}`}
                 onClick={() => navigate(item.path)}
+                data-active={isActive(item.path)}
               >
                 {item.label}
               </Button>
-              
-              {isActive(item.path) && (
-                <motion.div
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                  layoutId="activeNavIndicator"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                />
-              )}
             </div>
           ))}
         </nav>
