@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ArrowRight, Clock, CheckCircle2, AlertTriangle, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,9 +14,7 @@ interface Question {
   difficulty: "easy" | "medium" | "hard";
 }
 
-// Generate technical assessment questions based on job title and package
 const generateTechnicalQuestions = (jobTitle: string, packageType: string): Question[] => {
-  // Common questions across all roles
   const commonQuestions: Question[] = [
     {
       id: 1,
@@ -55,8 +52,7 @@ const generateTechnicalQuestions = (jobTitle: string, packageType: string): Ques
       difficulty: "medium",
     }
   ];
-  
-  // Role-specific questions
+
   const roleQuestions: {[key: string]: Question[]} = {
     "Software Engineer": [
       {
@@ -243,7 +239,7 @@ const generateTechnicalQuestions = (jobTitle: string, packageType: string): Ques
       {
         id: 406,
         question: "What is the RICE prioritization framework?",
-        options: ["Requirements, Implementation, Constraints, Evaluation", "Reach, Impact, Confidence, Effort", "Revenue, Interest, Cost, Engineering", "Research, Ideation, Creation, Execution"],
+        options: ["Requirements, Implementation, Constraints, Evaluation", "Reach, Impact, Confidence, Effort", "Research, Ideation, Creation, Execution", "Revenue, Interest, Cost, Engineering"],
         correctAnswer: 1,
         difficulty: "hard",
       },
@@ -256,8 +252,7 @@ const generateTechnicalQuestions = (jobTitle: string, packageType: string): Ques
       }
     ]
   };
-  
-  // Package-specific questions (increasing difficulty based on package level)
+
   const packageQuestions: {[key: string]: Question[]} = {
     "entry": [
       {
@@ -359,22 +354,13 @@ const generateTechnicalQuestions = (jobTitle: string, packageType: string): Ques
       }
     ]
   };
-  
-  // Get role-specific questions or default to Software Engineer
+
   const specificRoleQuestions = roleQuestions[jobTitle] || roleQuestions["Software Engineer"];
-  
-  // Get package level questions
   const levelQuestions = packageQuestions[packageType] || packageQuestions["mid"];
-  
-  // Combine all questions and return a subset
   const allQuestions = [...commonQuestions, ...specificRoleQuestions, ...levelQuestions];
-  
-  // Shuffle and select questions to ensure uniqueness
-  // Increased from 5 to 15 questions
   return shuffleArray(allQuestions).slice(0, 15);
 };
 
-// Helper function to shuffle array
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
   for (let i = newArray.length - 1; i > 0; i--) {
@@ -384,54 +370,44 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-// Get company-specific cutoff score based on job title and package
 const getCompanyCutoffScore = (company: string, jobTitle: string, packageType: string): number => {
-  // Base cutoff percentages by package level
   const baseCutoffs = {
-    'entry': 60,  // 60% for entry level
-    'mid': 70,    // 70% for mid level
-    'senior': 80   // 80% for senior level
+    'entry': 60,
+    'mid': 70,
+    'senior': 80
   };
-  
-  // Company-specific adjustments (could be expanded with more companies)
+
   const companyAdjustments: {[key: string]: number} = {
-    'Google': 10,     // Google has higher standards (+10%)
-    'Microsoft': 5,   // Microsoft has slightly higher standards (+5%)
-    'Amazon': 5,      // Amazon has slightly higher standards (+5%)
-    'Facebook': 8,    // Facebook has higher standards (+8%)
-    'Apple': 8,       // Apple has higher standards (+8%)
-    'Netflix': 10,    // Netflix has higher standards (+10%)
-    'Tesla': 7,       // Tesla has higher standards (+7%)
-    'IBM': 0,         // IBM has standard cutoffs (+0%)
-    'Oracle': 3,      // Oracle has slightly higher standards (+3%)
-    'Intel': 2        // Intel has slightly higher standards (+2%)
+    'Google': 10,
+    'Microsoft': 5,
+    'Amazon': 5,
+    'Facebook': 8,
+    'Apple': 8,
+    'Netflix': 10,
+    'Tesla': 7,
+    'IBM': 0,
+    'Oracle': 3,
+    'Intel': 2
   };
-  
-  // Role-specific adjustments
+
   const roleAdjustments: {[key: string]: number} = {
-    'Software Engineer': 0,       // Baseline
-    'Frontend Developer': -2,     // Slightly lower for frontend (-2%)
-    'Data Scientist': 5,          // Higher for data science roles (+5%)
-    'Product Manager': -5,        // Lower for non-technical roles (-5%)
-    'DevOps Engineer': 3,         // Higher for infrastructure roles (+3%)
-    'Security Engineer': 8,       // Higher for security roles (+8%)
-    'Machine Learning Engineer': 7 // Higher for ML roles (+7%)
+    'Software Engineer': 0,
+    'Frontend Developer': -2,
+    'Data Scientist': 5,
+    'Product Manager': -5,
+    'DevOps Engineer': 3,
+    'Security Engineer': 8,
+    'Machine Learning Engineer': 7
   };
-  
-  // Get base cutoff for package level
+
   const baseCutoff = baseCutoffs[packageType as keyof typeof baseCutoffs] || baseCutoffs['mid'];
-  
-  // Get company adjustment (if any)
   const companyAdjustment = Object.entries(companyAdjustments).find(
     ([key]) => company.toLowerCase().includes(key.toLowerCase())
   )?.[1] || 0;
-  
-  // Get role adjustment (if any)
   const roleAdjustment = Object.entries(roleAdjustments).find(
     ([key]) => jobTitle.toLowerCase().includes(key.toLowerCase())
   )?.[1] || 0;
-  
-  // Calculate and return final cutoff (ensure it's between 50-95%)
+
   return Math.min(95, Math.max(50, baseCutoff + companyAdjustment + roleAdjustment));
 };
 
@@ -441,28 +417,25 @@ const OnlineAssessment = () => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds (increased from 5 minutes)
+  const [timeLeft, setTimeLeft] = useState(600);
   const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
-  const [cutoffScore, setCutoffScore] = useState(70); // Default cutoff, will be updated based on company/job/package
+  const [cutoffScore, setCutoffScore] = useState(70);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
+  const [failureRedirectTimer, setFailureRedirectTimer] = useState(0);
+  const [suggestedTopics, setSuggestedTopics] = useState<string[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // Resume data from localStorage
+
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
   const selectedPackage = localStorage.getItem('selectedPackage') || 'entry';
-  
-  // Initialize questions and company-specific cutoff score
+
   useEffect(() => {
-    // Generate questions based on job title and package
     const questions = generateTechnicalQuestions(resumeData.jobTitle, selectedPackage);
     setTechnicalQuestions(questions);
-    
-    // Set company-specific cutoff score
+
     const companyCutoff = getCompanyCutoffScore(resumeData.company, resumeData.jobTitle, selectedPackage);
     setCutoffScore(companyCutoff);
-    
-    // Check if user has completed earlier steps
+
     if (!localStorage.getItem('resumeData')) {
       toast({
         title: "Resume not uploaded",
@@ -483,15 +456,13 @@ const OnlineAssessment = () => {
       return;
     }
   }, []);
-  
-  // Time formatting
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-  
-  // Timer countdown
+
   useEffect(() => {
     if (timeLeft > 0 && !isAssessmentComplete) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -500,34 +471,38 @@ const OnlineAssessment = () => {
       completeAssessment();
     }
   }, [timeLeft, isAssessmentComplete]);
-  
+
+  useEffect(() => {
+    if (isAssessmentComplete && failureRedirectTimer > 0) {
+      const timer = setTimeout(() => setFailureRedirectTimer(failureRedirectTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (isAssessmentComplete && failureRedirectTimer === 0 && failureRedirectTimer !== -1) {
+      navigate('/');
+    }
+  }, [failureRedirectTimer, isAssessmentComplete, navigate]);
+
   const handleOptionSelect = (optionIndex: number) => {
     setSelectedOption(optionIndex);
   };
-  
+
   const handleNextQuestion = () => {
-    // Mark this question as answered
     setAnsweredQuestions([...answeredQuestions, currentQuestion]);
-    
-    // Score the current question with negative marking
+
     if (selectedOption === technicalQuestions[currentQuestion].correctAnswer) {
-      // Calculate points based on difficulty
       const difficultyPoints = 
         technicalQuestions[currentQuestion].difficulty === "easy" ? 1 :
         technicalQuestions[currentQuestion].difficulty === "medium" ? 2 : 3;
       
       setScore(score + difficultyPoints);
     } else {
-      // Negative marking: -0.25 for easy, -0.5 for medium, -1 for hard questions
       const negativePoints = 
         technicalQuestions[currentQuestion].difficulty === "easy" ? 0.25 :
         technicalQuestions[currentQuestion].difficulty === "medium" ? 0.5 : 1;
       
-      setScore(Math.max(0, score - negativePoints)); // Ensure score doesn't go below 0
+      setScore(Math.max(0, score - negativePoints));
       setIncorrectAnswers(incorrectAnswers + 1);
     }
-    
-    // Move to next question or finish
+
     if (currentQuestion < technicalQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedOption(null);
@@ -535,71 +510,83 @@ const OnlineAssessment = () => {
       completeAssessment();
     }
   };
-  
+
   const completeAssessment = () => {
-    // Calculate final score if not already done
     if (!isAssessmentComplete && selectedOption !== null && !answeredQuestions.includes(currentQuestion)) {
-      // Score the last question
       if (selectedOption === technicalQuestions[currentQuestion].correctAnswer) {
-        // Calculate points based on difficulty
         const difficultyPoints = 
           technicalQuestions[currentQuestion].difficulty === "easy" ? 1 :
           technicalQuestions[currentQuestion].difficulty === "medium" ? 2 : 3;
         
         setScore(score + difficultyPoints);
       } else {
-        // Negative marking: -0.25 for easy, -0.5 for medium, -1 for hard questions
         const negativePoints = 
           technicalQuestions[currentQuestion].difficulty === "easy" ? 0.25 :
           technicalQuestions[currentQuestion].difficulty === "medium" ? 0.5 : 1;
         
-        setScore(Math.max(0, score - negativePoints)); // Ensure score doesn't go below 0
+        setScore(Math.max(0, score - negativePoints));
         setIncorrectAnswers(incorrectAnswers + 1);
       }
     }
-    
+
     setIsAssessmentComplete(true);
-    
-    // Calculate max possible score based on question difficulties
+
     const maxPossibleScore = technicalQuestions.reduce((total, q) => {
       return total + (q.difficulty === "easy" ? 1 : q.difficulty === "medium" ? 2 : 3);
     }, 0);
-    
-    // Calculate percentage score
+
     const percentageScore = Math.round((score / maxPossibleScore) * 100);
-    
-    // Save assessment data to localStorage
+    const isPassed = percentageScore >= cutoffScore;
+
+    if (!isPassed) {
+      setSuggestedTopics(generateImprovementTopics());
+      setFailureRedirectTimer(60);
+
+      const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
+      const company = resumeData.company;
+
+      const cooldownDate = new Date();
+      cooldownDate.setDate(cooldownDate.getDate() + 14);
+
+      failedCompanies[company] = {
+        timestamp: new Date().toISOString(),
+        cooldownUntil: cooldownDate.toISOString(),
+        score: percentageScore,
+        cutoff: cutoffScore,
+        topics: generateImprovementTopics()
+      };
+
+      localStorage.setItem('failedCompanies', JSON.stringify(failedCompanies));
+    }
+
     localStorage.setItem('assessmentScore', percentageScore.toString());
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
-    localStorage.setItem('assessmentPassed', (percentageScore >= cutoffScore).toString());
+    localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
-    
-    // Provide different messages based on whether the cutoff was met
-    if (percentageScore >= cutoffScore) {
+
+    if (isPassed) {
       toast({
         title: "Assessment Complete",
         description: `Congratulations! You scored ${percentageScore}%, which meets the ${cutoffScore}% cutoff for ${resumeData.company}.`,
       });
     } else {
       toast({
-        title: "Assessment Complete",
+        title: "Assessment Not Passed",
         description: `You scored ${percentageScore}%, which is below the ${cutoffScore}% cutoff for ${resumeData.company}.`,
         variant: "destructive",
       });
     }
   };
-  
+
   const continueToInterview = () => {
     navigate('/interview');
   };
-  
-  // Calculate the current question's difficulty level for display
+
   const getCurrentQuestionDifficulty = () => {
     if (technicalQuestions.length === 0) return "medium";
     return technicalQuestions[currentQuestion].difficulty;
   };
-  
-  // Get difficulty level color
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy": return "text-green-600 bg-green-100";
@@ -608,7 +595,18 @@ const OnlineAssessment = () => {
       default: return "text-gray-600 bg-gray-100";
     }
   };
-  
+
+  const generateImprovementTopics = () => {
+    const defaultTopics: {[key: string]: string[]} = {
+      "Software Engineer": ["Data Structures", "Algorithms", "System Design", "SOLID Principles"],
+      "Frontend Developer": ["JavaScript", "React Fundamentals", "CSS Layouts", "Web Performance"],
+      "Data Scientist": ["Statistical Methods", "Machine Learning Algorithms", "Data Cleaning", "Feature Engineering"],
+      "Product Manager": ["Product Requirements", "User Research", "Agile Methodologies", "Prioritization Frameworks"]
+    };
+
+    return defaultTopics[resumeData.jobTitle] || defaultTopics["Software Engineer"];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -710,61 +708,133 @@ const OnlineAssessment = () => {
             transition={{ duration: 0.5 }}
             className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center"
           >
-            {/* Calculate max possible score based on question difficulties */}
             {(() => {
               const maxPossibleScore = technicalQuestions.reduce((total, q) => {
                 return total + (q.difficulty === "easy" ? 1 : q.difficulty === "medium" ? 2 : 3);
               }, 0);
-              
-              // Calculate percentage score
+
               const percentageScore = Math.round((score / maxPossibleScore) * 100);
               const isPassed = percentageScore >= cutoffScore;
-              
-              return (
-                <>
-                  <div className={`w-20 h-20 ${isPassed ? 'bg-green-100' : 'bg-orange-100'} rounded-full flex items-center justify-center mx-auto mb-6`}>
-                    <CheckCircle2 className={`h-10 w-10 ${isPassed ? 'text-green-600' : 'text-orange-600'}`} />
-                  </div>
-                  
-                  <h2 className="text-2xl font-bold mb-2">Assessment Complete!</h2>
-                  <p className="text-gray-600 mb-2">
-                    You scored {percentageScore}% on the technical assessment
-                  </p>
-                  
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span>Company cutoff: {cutoffScore}%</span>
-                    <span className={isPassed ? "text-green-600" : "text-red-600"}>
-                      {isPassed ? "PASSED" : "NOT PASSED"}
-                    </span>
-                  </div>
-                  
-                  <div className="h-4 bg-gray-100 rounded-full mb-6 overflow-hidden">
-                    <div 
-                      className={`h-full ${isPassed ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gradient-to-r from-orange-500 to-red-500'}`}
-                      style={{ width: `${percentageScore}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
-                    <h4 className="font-medium mb-2">Assessment Summary:</h4>
-                    <ul className="space-y-1 text-sm">
-                      <li>Total questions: {technicalQuestions.length}</li>
-                      <li>Correct answers: {technicalQuestions.length - incorrectAnswers}</li>
-                      <li>Incorrect answers: {incorrectAnswers}</li>
-                      <li>Points earned: {score.toFixed(1)} / {maxPossibleScore}</li>
-                      <li className="font-medium mt-2">
-                        Result: <span className={isPassed ? "text-green-600" : "text-red-600"}>
-                          {isPassed ? "You met the company's requirements!" : "You didn't meet the company's requirements"}
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <Button onClick={continueToInterview} className="button-glow w-full">
-                    Continue to Interview <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </>
-              );
+
+              if (isPassed) {
+                return (
+                  <>
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle2 className="h-10 w-10 text-green-600" />
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold mb-2">Assessment Complete!</h2>
+                    <p className="text-gray-600 mb-2">
+                      You scored {percentageScore}% on the technical assessment
+                    </p>
+                    
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span>Company cutoff: {cutoffScore}%</span>
+                      <span className="text-green-600">PASSED</span>
+                    </div>
+                    
+                    <div className="h-4 bg-gray-100 rounded-full mb-6 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-500 to-blue-500"
+                        style={{ width: `${percentageScore}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                      <h4 className="font-medium mb-2">Assessment Summary:</h4>
+                      <ul className="space-y-1 text-sm">
+                        <li>Total questions: {technicalQuestions.length}</li>
+                        <li>Correct answers: {technicalQuestions.length - incorrectAnswers}</li>
+                        <li>Incorrect answers: {incorrectAnswers}</li>
+                        <li>Points earned: {score.toFixed(1)} / {maxPossibleScore}</li>
+                        <li className="font-medium mt-2">
+                          Result: <span className="text-green-600">
+                            You met the company's requirements!
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <Button onClick={continueToInterview} className="button-glow w-full">
+                      Continue to Interview <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </>
+                );
+              } else {
+                return (
+                  <>
+                    <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <AlertTriangle className="h-10 w-10 text-orange-600" />
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold mb-2">Assessment Not Passed</h2>
+                    <p className="text-gray-600 mb-2">
+                      You scored {percentageScore}% on the technical assessment
+                    </p>
+                    
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span>Company cutoff: {cutoffScore}%</span>
+                      <span className="text-red-600">NOT PASSED</span>
+                    </div>
+                    
+                    <div className="h-4 bg-gray-100 rounded-full mb-6 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-orange-500 to-red-500"
+                        style={{ width: `${percentageScore}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                      <h4 className="font-medium mb-2">Assessment Summary:</h4>
+                      <ul className="space-y-1 text-sm">
+                        <li>Total questions: {technicalQuestions.length}</li>
+                        <li>Correct answers: {technicalQuestions.length - incorrectAnswers}</li>
+                        <li>Incorrect answers: {incorrectAnswers}</li>
+                        <li>Points earned: {score.toFixed(1)} / {maxPossibleScore}</li>
+                        <li className="font-medium mt-2">
+                          Result: <span className="text-red-600">
+                            You didn't meet the company's requirements
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="font-semibold text-lg mb-3 text-left flex items-center">
+                        <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                        Suggested Areas for Improvement:
+                      </h3>
+                      <ul className="text-left space-y-2 mb-4">
+                        {suggestedTopics.map((topic, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="inline-block h-5 w-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center mr-2 mt-0.5">
+                              {index + 1}
+                            </span>
+                            <span>{topic}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      
+                      <div className="bg-primary/10 p-3 rounded-lg text-sm mb-4 text-left">
+                        <p className="font-medium text-primary mb-1">Note:</p>
+                        <p>You can reapply to {resumeData.company} after 14 days. Use this time to improve your skills in the areas mentioned above.</p>
+                      </div>
+                      
+                      <div className="text-center text-sm text-gray-600 mb-4">
+                        Redirecting to home page in {failureRedirectTimer} seconds
+                      </div>
+                      
+                      <Button 
+                        onClick={() => navigate('/')} 
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Return Home
+                      </Button>
+                    </div>
+                  </>
+                );
+              }
             })()}
           </motion.div>
         </div>

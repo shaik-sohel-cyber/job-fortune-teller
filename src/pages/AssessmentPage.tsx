@@ -1,13 +1,21 @@
 
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import OnlineAssessment from "@/components/OnlineAssessment";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, CalendarClock } from "lucide-react";
 
 const AssessmentPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockedInfo, setBlockedInfo] = useState<{
+    company: string;
+    cooldownUntil: string;
+    remainingDays: number;
+  } | null>(null);
 
   useEffect(() => {
     // Check if user has completed earlier steps
@@ -40,6 +48,35 @@ const AssessmentPage = () => {
       navigate('/package-selection');
       return;
     }
+
+    // Check if company is in cooldown period
+    const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
+    const company = resumeData.company || '';
+    const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
+    
+    if (failedCompanies[company]) {
+      const cooldownUntil = new Date(failedCompanies[company].cooldownUntil);
+      const currentDate = new Date();
+      
+      if (cooldownUntil > currentDate) {
+        // Calculate remaining days
+        const diffTime = cooldownUntil.getTime() - currentDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        setIsBlocked(true);
+        setBlockedInfo({
+          company,
+          cooldownUntil: cooldownUntil.toLocaleDateString(),
+          remainingDays: diffDays
+        });
+        
+        toast({
+          title: "Assessment Blocked",
+          description: `You can reapply to ${company} after ${diffDays} days.`,
+          variant: "destructive",
+        });
+      }
+    }
   }, [navigate, toast]);
 
   return (
@@ -49,15 +86,73 @@ const AssessmentPage = () => {
       exit={{ opacity: 0 }}
       className="min-h-screen pt-20 pb-10 px-4 flex flex-col"
     >
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden">
-        <div className="bg-primary p-4 text-white">
-          <h2 className="text-xl font-semibold">Technical Assessment</h2>
-          <p className="text-sm text-white/80">Complete the assessment to proceed to your interview</p>
+      {isBlocked && blockedInfo ? (
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
+          >
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <AlertTriangle className="h-10 w-10 text-red-600" />
+            </div>
+            
+            <h2 className="text-2xl font-bold mb-2">Assessment Access Blocked</h2>
+            
+            <div className="w-full max-w-md bg-red-50 border border-red-200 rounded-lg p-4 my-6 text-center">
+              <p className="text-gray-700">
+                You recently attempted an assessment for <span className="font-semibold">{blockedInfo.company}</span> but did not meet the required score.
+              </p>
+              
+              <div className="flex items-center justify-center gap-2 my-4">
+                <CalendarClock className="h-5 w-5 text-primary" />
+                <span className="font-medium text-primary">
+                  Cooldown Period: {blockedInfo.remainingDays} days remaining
+                </span>
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                You can reapply after {blockedInfo.cooldownUntil}
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left w-full max-w-md">
+              <h4 className="font-medium mb-2">What should you do now?</h4>
+              <ul className="space-y-2 text-sm pl-2">
+                <li>• Review the suggested improvement topics from your previous attempt</li>
+                <li>• Practice relevant technical skills</li>
+                <li>• Return after the cooldown period with improved knowledge</li>
+                <li>• Try applying to other companies in the meantime</li>
+              </ul>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => navigate('/')} 
+                variant="outline" 
+              >
+                Return Home
+              </Button>
+              <Button 
+                onClick={() => navigate('/upload')} 
+                className="button-glow"
+              >
+                Try Different Company
+              </Button>
+            </div>
+          </motion.div>
         </div>
-        <div className="flex-1 flex flex-col">
-          <OnlineAssessment />
+      ) : (
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden">
+          <div className="bg-primary p-4 text-white">
+            <h2 className="text-xl font-semibold">Technical Assessment</h2>
+            <p className="text-sm text-white/80">Complete the assessment to proceed to your interview</p>
+          </div>
+          <div className="flex-1 flex flex-col">
+            <OnlineAssessment />
+          </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 };
