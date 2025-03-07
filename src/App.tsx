@@ -17,6 +17,8 @@ import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Import framer-motion for animations
 import { LazyMotion, domAnimation } from "framer-motion";
@@ -30,22 +32,30 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/upload" element={<Upload />} />
-              <Route path="/verification" element={<VerificationPage />} />
-              <Route path="/package-selection" element={<PackageSelection />} />
-              <Route path="/assessment" element={<AssessmentPage />} />
-              <Route path="/interview" element={<Interview />} />
-              <Route path="/results" element={<ResultsPage />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/contact" element={<ContactUs />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
+          <AuthProvider>
+            <Layout>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="/contact" element={<ContactUs />} />
+                
+                {/* Protected routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/upload" element={<Upload />} />
+                  <Route path="/verification" element={<VerificationPage />} />
+                  <Route path="/package-selection" element={<PackageSelection />} />
+                  <Route path="/assessment" element={<AssessmentPage />} />
+                  <Route path="/interview" element={<Interview />} />
+                  <Route path="/results" element={<ResultsPage />} />
+                </Route>
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </LazyMotion>

@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -51,7 +53,7 @@ const Header = () => {
             <div key={item.path} className="relative">
               <Button
                 variant="ghost"
-                className={`text-base font-medium neon-tab ${isActive(item.path) ? "text-accent" : "text-foreground"}`}
+                className={`text-base font-medium ${isActive(item.path) ? "text-accent" : "text-foreground"}`}
                 onClick={() => navigate(item.path)}
                 data-active={isActive(item.path)}
               >
@@ -62,33 +64,53 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          {location.pathname !== "/login" && location.pathname !== "/signup" && (
+          {isAuthenticated ? (
             <>
+              <div className="hidden sm:block text-sm">
+                <span>Hello, </span>
+                <span className="font-semibold">{user?.name}</span>
+              </div>
               <Button 
                 variant="ghost"
                 size="sm"
-                className="hidden sm:flex items-center gap-2"
-                onClick={() => navigate("/login")}
+                className="flex items-center gap-2"
+                onClick={logout}
               >
-                <LogIn className="h-4 w-4" />
-                Login
-              </Button>
-              <Button 
-                className="button-glow"
-                onClick={() => navigate("/signup")}
-              >
-                <UserPlus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Sign Up</span>
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </>
-          )}
-          {(location.pathname === "/login" || location.pathname === "/signup") && (
-            <Button 
-              className="button-glow"
-              onClick={() => navigate("/")}
-            >
-              Back to Home
-            </Button>
+          ) : (
+            <>
+              {location.pathname !== "/login" && location.pathname !== "/signup" && (
+                <>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    className="hidden sm:flex items-center gap-2"
+                    onClick={() => navigate("/login")}
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Login
+                  </Button>
+                  <Button 
+                    className="button-glow"
+                    onClick={() => navigate("/signup")}
+                  >
+                    <UserPlus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Sign Up</span>
+                  </Button>
+                </>
+              )}
+              {(location.pathname === "/login" || location.pathname === "/signup") && (
+                <Button 
+                  className="button-glow"
+                  onClick={() => navigate("/")}
+                >
+                  Back to Home
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -1,12 +1,12 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
@@ -15,22 +15,20 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Here you would typically call an authentication API
-    // For now, we'll just simulate a successful login
-    setTimeout(() => {
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
+    try {
+      await login(email, password);
+      // The redirect is handled in the login function
+    } catch (error) {
+      // Error handling is done in the login function
+    } finally {
       setIsLoading(false);
-      navigate("/");
-    }, 1500);
+    }
   };
 
   return (
@@ -105,12 +103,9 @@ const Login = () => {
             </div>
             <div className="text-sm text-center">
               Don't have an account?{" "}
-              <button
-                onClick={() => navigate("/signup")}
-                className="text-accent hover:underline"
-              >
+              <Link to="/signup" className="text-accent hover:underline">
                 Sign up
-              </button>
+              </Link>
             </div>
           </CardFooter>
         </Card>

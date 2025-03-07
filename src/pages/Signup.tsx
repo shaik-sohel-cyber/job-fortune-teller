@@ -1,12 +1,12 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
@@ -17,32 +17,25 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
+      return; // Toast is handled in the auth context
     }
     
     setIsLoading(true);
 
-    // Here you would typically call an authentication API
-    // For now, we'll just simulate a successful signup
-    setTimeout(() => {
-      toast({
-        title: "Account created successfully",
-        description: "Welcome to Job Fortune!",
-      });
+    try {
+      await signup(name, email, password);
+      // The redirect is handled in the signup function
+    } catch (error) {
+      // Error handling is done in the signup function
+    } finally {
       setIsLoading(false);
-      navigate("/login");
-    }, 1500);
+    }
   };
 
   return (
@@ -140,12 +133,9 @@ const Signup = () => {
           <CardFooter>
             <div className="text-sm text-center w-full">
               Already have an account?{" "}
-              <button
-                onClick={() => navigate("/login")}
-                className="text-accent hover:underline"
-              >
+              <Link to="/login" className="text-accent hover:underline">
                 Log in
-              </button>
+              </Link>
             </div>
           </CardFooter>
         </Card>
