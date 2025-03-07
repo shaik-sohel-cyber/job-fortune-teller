@@ -36,14 +36,14 @@ const App = () => (
             <Layout>
               <Routes>
                 {/* Public routes */}
+                <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/contact" element={<ContactUs />} />
                 
-                {/* Protected routes */}
+                {/* Protected routes - features that require login */}
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Home />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/verification" element={<VerificationPage />} />
                   <Route path="/package-selection" element={<PackageSelection />} />
