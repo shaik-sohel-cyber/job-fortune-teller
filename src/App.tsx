@@ -15,6 +15,8 @@ import AssessmentPage from "@/pages/AssessmentPage";
 import PackageSelection from "@/components/PackageSelection";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 
 // Import framer-motion for animations
 import { LazyMotion, domAnimation } from "framer-motion";
@@ -39,6 +41,8 @@ const App = () => (
               <Route path="/results" element={<ResultsPage />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<ContactUs />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { LogIn, UserPlus } from "lucide-react";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -60,12 +61,36 @@ const Header = () => {
           ))}
         </nav>
         
-        <Button 
-          className="button-glow"
-          onClick={() => navigate("/upload")}
-        >
-          Get Started
-        </Button>
+        <div className="flex items-center space-x-4">
+          {location.pathname !== "/login" && location.pathname !== "/signup" && (
+            <>
+              <Button 
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex items-center gap-2"
+                onClick={() => navigate("/login")}
+              >
+                <LogIn className="h-4 w-4" />
+                Login
+              </Button>
+              <Button 
+                className="button-glow"
+                onClick={() => navigate("/signup")}
+              >
+                <UserPlus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign Up</span>
+              </Button>
+            </>
+          )}
+          {(location.pathname === "/login" || location.pathname === "/signup") && (
+            <Button 
+              className="button-glow"
+              onClick={() => navigate("/")}
+            >
+              Back to Home
+            </Button>
+          )}
+        </div>
       </div>
     </motion.header>
   );
