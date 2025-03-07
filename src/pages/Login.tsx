@@ -32,7 +32,7 @@ const Login = () => {
   };
 
   return (
-    <div className="container max-w-md mx-auto px-4 h-[calc(100vh-140px)] flex flex-col justify-center">
+    <div className="container max-w-md mx-auto px-4 pt-28 pb-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
