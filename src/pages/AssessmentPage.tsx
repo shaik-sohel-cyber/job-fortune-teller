@@ -14,7 +14,7 @@ const AssessmentPage = () => {
   const [blockedInfo, setBlockedInfo] = useState<{
     company: string;
     cooldownUntil: string;
-    remainingDays: number;
+    remainingMinutes: number;
   } | null>(null);
 
   useEffect(() => {
@@ -59,20 +59,20 @@ const AssessmentPage = () => {
       const currentDate = new Date();
       
       if (cooldownUntil > currentDate) {
-        // Calculate remaining days
+        // Calculate remaining minutes
         const diffTime = cooldownUntil.getTime() - currentDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffMinutes = Math.ceil(diffTime / (1000 * 60));
         
         setIsBlocked(true);
         setBlockedInfo({
           company,
-          cooldownUntil: cooldownUntil.toLocaleDateString(),
-          remainingDays: diffDays
+          cooldownUntil: cooldownUntil.toLocaleTimeString(),
+          remainingMinutes: diffMinutes
         });
         
         toast({
           title: "Assessment Blocked",
-          description: `You can reapply to ${company} after ${diffDays} days.`,
+          description: `You can retry this assessment after ${diffMinutes} minutes.`,
           variant: "destructive",
         });
       }
@@ -107,12 +107,12 @@ const AssessmentPage = () => {
               <div className="flex items-center justify-center gap-2 my-4">
                 <CalendarClock className="h-5 w-5 text-primary" />
                 <span className="font-medium text-primary">
-                  Cooldown Period: {blockedInfo.remainingDays} days remaining
+                  Cooldown Period: {blockedInfo.remainingMinutes} minutes remaining
                 </span>
               </div>
               
               <p className="text-sm text-gray-600">
-                You can reapply after {blockedInfo.cooldownUntil}
+                You can retry after {blockedInfo.cooldownUntil}
               </p>
             </div>
             

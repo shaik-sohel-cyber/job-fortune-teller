@@ -39,7 +39,7 @@ const Header = () => {
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
           onClick={() => navigate("/")}
         >
-          <span className="text-gradient cursor-pointer">Job Fortune</span>
+          <span className="text-gradient cursor-pointer">JobGenisis</span>
         </motion.div>
         
         <nav className="hidden md:flex items-center space-x-8">

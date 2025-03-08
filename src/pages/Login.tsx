@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +27,12 @@ const Login = () => {
       await login(email, password);
       // The redirect is handled in the login function
     } catch (error) {
-      // Error handling is done in the login function
+      // Display custom toast if needed, though error handling is done in the login function
+      toast({
+        title: "Login failed",
+        description: "Please check if you've registered already.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

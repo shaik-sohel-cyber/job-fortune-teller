@@ -313,7 +313,7 @@ const OnlineAssessment = () => {
           />
           
           <div className="bg-white rounded-xl shadow-md p-6 mb-6 flex-1">
-            <h3 className="text-xl font-semibold mb-4">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">
               {technicalQuestions[currentQuestion].question}
             </h3>
             
@@ -325,7 +325,7 @@ const OnlineAssessment = () => {
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedOption === index
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800"
                   }`}
                 >
                   <div className="flex items-center">
