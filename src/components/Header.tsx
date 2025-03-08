@@ -22,11 +22,14 @@ const Header = () => {
   }, []);
 
   const isActive = (path: string) => location.pathname === path;
+  
+  // Check if the current route is login or signup
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
 
   return (
     <motion.header 
       className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300 ${
-        scrolled ? "bg-black/80 backdrop-blur-md shadow-md" : "bg-transparent"
+        scrolled ? "bg-black/80 backdrop-blur-md shadow-md" : (isAuthPage ? "bg-transparent" : "bg-black/50")
       }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -53,7 +56,7 @@ const Header = () => {
             <div key={item.path} className="relative">
               <Button
                 variant="ghost"
-                className={`text-base font-medium ${isActive(item.path) ? "text-accent" : "text-foreground"}`}
+                className={`text-base font-medium ${isActive(item.path) ? "text-accent" : "text-white"}`}
                 onClick={() => navigate(item.path)}
                 data-active={isActive(item.path)}
               >
@@ -66,14 +69,14 @@ const Header = () => {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <>
-              <div className="hidden sm:block text-sm">
+              <div className="hidden sm:block text-white text-sm">
                 <span>Hello, </span>
                 <span className="font-semibold">{user?.name}</span>
               </div>
               <Button 
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-white hover:bg-white/20"
                 onClick={logout}
               >
                 <LogOut className="h-4 w-4" />
@@ -87,14 +90,14 @@ const Header = () => {
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="hidden sm:flex items-center gap-2"
+                    className="hidden sm:flex items-center gap-2 text-white hover:bg-white/20"
                     onClick={() => navigate("/login")}
                   >
                     <LogIn className="h-4 w-4" />
                     Login
                   </Button>
                   <Button 
-                    className="button-glow"
+                    className="button-glow text-white"
                     onClick={() => navigate("/signup")}
                   >
                     <UserPlus className="h-4 w-4 sm:mr-2" />
@@ -104,7 +107,7 @@ const Header = () => {
               )}
               {(location.pathname === "/login" || location.pathname === "/signup") && (
                 <Button 
-                  className="button-glow"
+                  className="button-glow text-white"
                   onClick={() => navigate("/")}
                 >
                   Back to Home
