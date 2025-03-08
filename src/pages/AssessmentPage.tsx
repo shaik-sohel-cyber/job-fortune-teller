@@ -84,23 +84,23 @@ const AssessmentPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4 flex flex-col bg-black"
+      className="min-h-screen pt-20 pb-10 px-4 flex flex-col"
     >
       {isBlocked && blockedInfo ? (
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-slate-800 text-white shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
+            className="bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
           >
-            <div className="w-20 h-20 bg-red-900/50 rounded-full flex items-center justify-center mb-6">
-              <AlertTriangle className="h-10 w-10 text-red-500" />
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <AlertTriangle className="h-10 w-10 text-red-600" />
             </div>
             
             <h2 className="text-2xl font-bold mb-2">Assessment Access Blocked</h2>
             
-            <div className="w-full max-w-md bg-red-900/30 border border-red-800 rounded-lg p-4 my-6 text-center">
-              <p className="text-white">
+            <div className="w-full max-w-md bg-red-50 border border-red-200 rounded-lg p-4 my-6 text-center">
+              <p className="text-gray-700">
                 You recently attempted an assessment for <span className="font-semibold">{blockedInfo.company}</span> but did not meet the required score.
               </p>
               
@@ -111,14 +111,14 @@ const AssessmentPage = () => {
                 </span>
               </div>
               
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-gray-600">
                 You can retry after {blockedInfo.cooldownUntil}
               </p>
             </div>
             
-            <div className="bg-slate-700 p-4 rounded-lg mb-6 text-left w-full max-w-md">
+            <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left w-full max-w-md">
               <h4 className="font-medium mb-2">What should you do now?</h4>
-              <ul className="space-y-2 text-sm pl-2 text-slate-300">
+              <ul className="space-y-2 text-sm pl-2">
                 <li>• Review the suggested improvement topics from your previous attempt</li>
                 <li>• Practice relevant technical skills</li>
                 <li>• Return after the cooldown period with improved knowledge</li>
@@ -130,7 +130,6 @@ const AssessmentPage = () => {
               <Button 
                 onClick={() => navigate('/')} 
                 variant="outline" 
-                className="text-white border-slate-600 hover:bg-slate-700"
               >
                 Return Home
               </Button>
@@ -144,7 +143,7 @@ const AssessmentPage = () => {
           </motion.div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-slate-800 shadow-lg rounded-xl overflow-hidden">
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden">
           <div className="bg-primary p-4 text-white">
             <h2 className="text-xl font-semibold">Technical Assessment</h2>
             <p className="text-sm text-white/80">Complete the assessment to proceed to your interview</p>
