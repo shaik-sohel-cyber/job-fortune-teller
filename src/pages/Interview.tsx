@@ -79,7 +79,7 @@ const Interview = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
+      <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-b from-black to-slate-900">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
@@ -90,7 +90,7 @@ const Interview = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4"
+      className="min-h-screen pt-20 pb-10 px-4 bg-gradient-to-b from-black to-slate-900"
     >
       {isAccessAllowed ? (
         <VirtualInterview />
