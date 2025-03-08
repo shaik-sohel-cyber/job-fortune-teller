@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Check, X, AlertTriangle, CheckCircle, Award, TrendingUp, BarChart, LineChart } from "lucide-react";
+import { ArrowLeft, Download, Check, X, AlertTriangle, CheckCircle, Award, TrendingUp, BarChart, LineChart, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,6 +11,7 @@ const Results = () => {
   const [resumeScore, setResumeScore] = useState(0);
   const [assessmentScore, setAssessmentScore] = useState(0);
   const [interviewScore, setInterviewScore] = useState(0);
+  const [roundScores, setRoundScores] = useState<number[]>([0, 0, 0, 0]);
   const [overallScore, setOverallScore] = useState(0);
   const [jobSuccess, setJobSuccess] = useState(0);
   const [strengths, setStrengths] = useState<string[]>([]);
@@ -18,12 +19,15 @@ const Results = () => {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [skillGaps, setSkillGaps] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [applicationStatus, setApplicationStatus] = useState("pending");
+  const [showEmailSent, setShowEmailSent] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{"jobTitle": "Software Developer", "company": "Tech Company"}');
   const selectedPackage = localStorage.getItem('selectedPackage') || 'entry';
+  const userEmail = localStorage.getItem('userEmail') || '';
   
   const getScoreLabel = (score: number) => {
     if (score >= 80) return "Excellent";
@@ -378,6 +382,32 @@ const Results = () => {
       const assessmentScoreVal = parseInt(localStorage.getItem('assessmentScore') || '75');
       const interviewScoreVal = parseInt(localStorage.getItem('interviewScore') || '0') || Math.floor(60 + Math.random() * 30);
       
+      // Get round scores if available or generate them
+      let roundScoresVal: number[] = [];
+      try {
+        roundScoresVal = JSON.parse(localStorage.getItem('interviewRoundScores') || '[]');
+      } catch (e) {
+        // Generate random round scores if not available
+        roundScoresVal = [
+          Math.floor(50 + Math.random() * 40),
+          Math.floor(50 + Math.random() * 40),
+          Math.floor(50 + Math.random() * 40),
+          Math.floor(50 + Math.random() * 40)
+        ];
+      }
+      
+      // If roundScores is empty, generate them
+      if (!roundScoresVal.length) {
+        roundScoresVal = [
+          Math.floor(50 + Math.random() * 40),
+          Math.floor(50 + Math.random() * 40),
+          Math.floor(50 + Math.random() * 40),
+          Math.floor(50 + Math.random() * 40)
+        ];
+      }
+      
+      setRoundScores(roundScoresVal);
+      
       const resumeScoreVal = Math.round((verificationResults.verifiedItems / verificationResults.totalItems) * 100);
       
       // Weight the scores based on job level
@@ -404,6 +434,15 @@ const Results = () => {
       setInterviewScore(interviewScoreVal);
       setOverallScore(overall);
       setJobSuccess(Math.round(successProb));
+      
+      // Set application status based on job success probability
+      if (successProb >= 70) {
+        setApplicationStatus("success");
+      } else if (successProb >= 50) {
+        setApplicationStatus("review");
+      } else {
+        setApplicationStatus("rejected");
+      }
       
       // Generate custom strengths, weaknesses, and recommendations based on job title and package
       const jobStrengths = generateJobSpecificStrengths(resumeData.jobTitle, selectedPackage);
@@ -446,6 +485,7 @@ const Results = () => {
         resume: resumeScore,
         assessment: assessmentScore,
         interview: interviewScore,
+        interviewRounds: roundScores,
         overall: overallScore,
         jobSuccess: jobSuccess
       },
@@ -481,9 +521,20 @@ const Results = () => {
     localStorage.removeItem('interviewComplete');
     localStorage.removeItem('interviewScore');
     localStorage.removeItem('interviewResponses');
+    localStorage.removeItem('interviewRoundScores');
     localStorage.removeItem('selectedPackage');
     
     navigate('/');
+  };
+
+  const sendEmailNotification = () => {
+    // Simulate sending email
+    setShowEmailSent(true);
+    
+    toast({
+      title: "Thank you for your application",
+      description: `We'll contact you soon at ${userEmail || "your email address"} with further information.`,
+    });
   };
   
   if (isLoading) {
@@ -491,8 +542,8 @@ const Results = () => {
       <div className="h-full w-full flex items-center justify-center p-6">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4"></div>
-          <h3 className="text-xl font-semibold mb-2">Analyzing Your Performance</h3>
-          <p className="text-muted-foreground">
+          <h3 className="text-xl font-semibold mb-2 text-gray-800">Analyzing Your Performance</h3>
+          <p className="text-gray-600">
             We're evaluating your resume, assessment, and interview responses...
           </p>
         </div>
@@ -514,23 +565,112 @@ const Results = () => {
           transition={{ delay: 0.2 }}
         >
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold">Your Interview Results</h2>
+            <h2 className="text-3xl font-bold text-gray-800">Your Interview Results</h2>
             <Button variant="outline" onClick={restartProcess}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Start New Application
             </Button>
           </div>
           
+          {applicationStatus === "success" && !showEmailSent && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6 shadow-sm"
+            >
+              <div className="flex items-start">
+                <div className="bg-green-100 rounded-full p-2 mr-4">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-green-800 mb-1">Congratulations!</h3>
+                  <p className="text-green-700 mb-4">
+                    Based on your excellent performance in the interview process, we believe you would be a great fit for the {resumeData.jobTitle} position at {resumeData.company}. We'd like to discuss next steps with you.
+                  </p>
+                  <Button onClick={sendEmailNotification} className="bg-green-600 hover:bg-green-700">
+                    <Mail className="mr-2 h-4 w-4" /> Get Notified by Email
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {applicationStatus === "review" && !showEmailSent && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6 shadow-sm"
+            >
+              <div className="flex items-start">
+                <div className="bg-blue-100 rounded-full p-2 mr-4">
+                  <AlertTriangle className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-blue-800 mb-1">Application Under Review</h3>
+                  <p className="text-blue-700 mb-4">
+                    Thank you for completing the interview process. Your application for the {resumeData.jobTitle} position at {resumeData.company} is currently under review. We'll be in touch soon with an update.
+                  </p>
+                  <Button onClick={sendEmailNotification} className="bg-blue-600 hover:bg-blue-700">
+                    <Mail className="mr-2 h-4 w-4" /> Get Notified by Email
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {applicationStatus === "rejected" && !showEmailSent && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6 shadow-sm"
+            >
+              <div className="flex items-start">
+                <div className="bg-orange-100 rounded-full p-2 mr-4">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-orange-800 mb-1">Thank You for Applying</h3>
+                  <p className="text-orange-700 mb-4">
+                    We appreciate your interest in the {resumeData.jobTitle} position at {resumeData.company}. While your profile has many strengths, we've identified some areas where additional experience would be beneficial. We encourage you to review our recommendations below.
+                  </p>
+                  <Button onClick={sendEmailNotification} variant="outline" className="border-orange-600 text-orange-600 hover:bg-orange-50">
+                    <Mail className="mr-2 h-4 w-4" /> Get Feedback by Email
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {showEmailSent && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6 shadow-sm"
+            >
+              <div className="flex items-center">
+                <div className="bg-green-100 rounded-full p-2 mr-4">
+                  <Check className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-green-800 mb-1">Email Notification Sent</h3>
+                  <p className="text-green-700">
+                    We'll contact you soon at {userEmail || "your email address"} with further information about your application.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold">Job Success Prediction</h3>
+                <h3 className="text-xl font-semibold text-gray-800">Job Success Prediction</h3>
                 <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               
               <div className="relative pt-1">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <span className="text-xs font-semibold inline-block uppercase">
+                    <span className="text-xs font-semibold inline-block uppercase text-gray-600">
                       Probability of Success
                     </span>
                   </div>
@@ -554,11 +694,11 @@ const Results = () => {
                 </div>
               </div>
               
-              <div className="mt-6 pt-4 border-t">
-                <h4 className="font-medium mb-2">Application for:</h4>
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <h4 className="font-medium mb-2 text-gray-700">Application for:</h4>
                 <p className="text-primary font-semibold">{resumeData.jobTitle}</p>
                 <p className="text-sm text-gray-500">{resumeData.company}</p>
-                <p className="mt-2 text-sm">
+                <p className="mt-2 text-sm text-gray-600">
                   <span className="font-medium">Package Level:</span>{" "}
                   <span className="capitalize">{selectedPackage}</span>
                 </p>
@@ -567,14 +707,14 @@ const Results = () => {
             
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold">Performance Breakdown</h3>
+                <h3 className="text-xl font-semibold text-gray-800">Performance Breakdown</h3>
                 <BarChart className="h-5 w-5 text-primary" />
               </div>
               
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Resume Quality</span>
+                    <span className="text-sm font-medium text-gray-700">Resume Quality</span>
                     <span className={`text-sm ${getScoreColor(resumeScore)}`}>{resumeScore}%</span>
                   </div>
                   <Progress value={resumeScore} className="h-2" />
@@ -582,7 +722,7 @@ const Results = () => {
                 
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Technical Assessment</span>
+                    <span className="text-sm font-medium text-gray-700">Technical Assessment</span>
                     <span className={`text-sm ${getScoreColor(assessmentScore)}`}>{assessmentScore}%</span>
                   </div>
                   <Progress value={assessmentScore} className="h-2" />
@@ -590,20 +730,60 @@ const Results = () => {
                 
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Interview Performance</span>
+                    <span className="text-sm font-medium text-gray-700">Interview Performance</span>
                     <span className={`text-sm ${getScoreColor(interviewScore)}`}>{interviewScore}%</span>
                   </div>
                   <Progress value={interviewScore} className="h-2" />
                 </div>
                 
-                <div className="pt-2 mt-2 border-t">
+                <div className="pt-2 mt-2 border-t border-gray-100">
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-semibold">Overall Score</span>
+                    <span className="text-sm font-semibold text-gray-700">Overall Score</span>
                     <span className={`text-sm font-semibold ${getScoreColor(overallScore)}`}>{overallScore}%</span>
                   </div>
                   <Progress value={overallScore} className={`h-3 ${getProgressColor(overallScore)}`} />
                 </div>
               </div>
+            </div>
+          </div>
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 mb-6">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">Interview Round Performance</h3>
+            <div className="space-y-4">
+              {roundScores.map((score, index) => (
+                <div key={index}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">
+                      Round {index + 1}: 
+                      {index === 0 ? " Technical Interview" : 
+                       index === 1 ? " Coding Assessment" :
+                       index === 2 ? " Domain Knowledge" : " HR Discussion"}
+                    </span>
+                    <span className={`text-sm ${getScoreColor(score)}`}>{score}%</span>
+                  </div>
+                  <div className="relative pt-1">
+                    <div className="overflow-hidden h-2 mb-1 text-xs flex rounded bg-gray-200">
+                      <div
+                        style={{ width: `${score}%` }}
+                        className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${getProgressColor(score)}`}
+                      ></div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-3">
+                    {score >= 80 ? "Outstanding performance in this round." :
+                     score >= 70 ? "Very good performance with minor areas for improvement." :
+                     score >= 60 ? "Good performance with some areas needing additional focus." :
+                     score >= 50 ? "Average performance with several areas needing improvement." :
+                     "This area needs significant improvement."}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -617,13 +797,13 @@ const Results = () => {
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
             <div className="flex items-center text-green-600 mb-4">
               <CheckCircle className="h-5 w-5 mr-2" />
-              <h3 className="text-lg font-semibold">Strengths</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Strengths</h3>
             </div>
             <ul className="space-y-3">
               {strengths.map((strength, index) => (
                 <li key={index} className="flex">
                   <Check className="h-5 w-5 text-green-500 mr-2 shrink-0" />
-                  <span className="text-sm">{strength}</span>
+                  <span className="text-sm text-gray-700">{strength}</span>
                 </li>
               ))}
             </ul>
@@ -632,13 +812,13 @@ const Results = () => {
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
             <div className="flex items-center text-red-600 mb-4">
               <AlertTriangle className="h-5 w-5 mr-2" />
-              <h3 className="text-lg font-semibold">Areas for Improvement</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Areas for Improvement</h3>
             </div>
             <ul className="space-y-3">
               {weaknesses.map((weakness, index) => (
                 <li key={index} className="flex">
                   <X className="h-5 w-5 text-red-500 mr-2 shrink-0" />
-                  <span className="text-sm">{weakness}</span>
+                  <span className="text-sm text-gray-700">{weakness}</span>
                 </li>
               ))}
             </ul>
@@ -647,13 +827,13 @@ const Results = () => {
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
             <div className="flex items-center text-blue-600 mb-4">
               <Award className="h-5 w-5 mr-2" />
-              <h3 className="text-lg font-semibold">Recommendations</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Recommendations</h3>
             </div>
             <ul className="space-y-3">
               {recommendations.map((recommendation, index) => (
                 <li key={index} className="flex">
                   <TrendingUp className="h-5 w-5 text-blue-500 mr-2 shrink-0" />
-                  <span className="text-sm">{recommendation}</span>
+                  <span className="text-sm text-gray-700">{recommendation}</span>
                 </li>
               ))}
             </ul>
@@ -667,13 +847,13 @@ const Results = () => {
           className="bg-white rounded-xl p-6 shadow-md border border-gray-100 mb-8"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold">Assessment Analysis</h3>
+            <h3 className="text-xl font-semibold text-gray-800">Assessment Analysis</h3>
             <LineChart className="h-5 w-5 text-primary" />
           </div>
           
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium mb-2">Technical Skills Analysis</h4>
+              <h4 className="font-medium mb-2 text-gray-700">Technical Skills Analysis</h4>
               <p className="text-sm text-gray-700 mb-4">
                 Based on your technical assessment score of {assessmentScore}%, we've identified the following areas where additional focus could improve your skills:
               </p>
@@ -692,25 +872,25 @@ const Results = () => {
               </div>
             </div>
             
-            <div className="pt-4 border-t">
-              <h4 className="font-medium mb-2">Next Steps for Growth</h4>
+            <div className="pt-4 border-t border-gray-100">
+              <h4 className="font-medium mb-2 text-gray-700">Next Steps for Growth</h4>
               <p className="text-sm text-gray-700">
                 To improve your chances of success in future applications for {resumeData.jobTitle} positions:
               </p>
               <ul className="mt-2 space-y-2">
-                <li className="text-sm flex items-start">
+                <li className="text-sm flex items-start text-gray-700">
                   <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
                   Focus on strengthening the skills identified in your assessment results
                 </li>
-                <li className="text-sm flex items-start">
+                <li className="text-sm flex items-start text-gray-700">
                   <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
                   Address the areas for improvement noted from your interview performance
                 </li>
-                <li className="text-sm flex items-start">
+                <li className="text-sm flex items-start text-gray-700">
                   <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
                   Update your resume to better highlight your achievements and relevant experience
                 </li>
-                <li className="text-sm flex items-start">
+                <li className="text-sm flex items-start text-gray-700">
                   <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
                   Consider additional training or certification in your field
                 </li>
