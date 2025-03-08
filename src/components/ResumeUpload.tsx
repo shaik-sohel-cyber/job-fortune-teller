@@ -264,14 +264,14 @@ const ResumeUpload = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-slate-800"
+                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-background/90 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-slate-800"
                 >
                   <ul className="py-1 text-base">
                     {jobTitleSuggestions.map((suggestion, index) => (
                       <li
                         key={index}
                         onClick={() => selectJobTitleSuggestion(suggestion)}
-                        className="px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
+                        className="px-4 py-2 cursor-pointer hover:bg-accent/20 text-foreground"
                       >
                         {suggestion}
                       </li>
@@ -300,14 +300,14 @@ const ResumeUpload = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-slate-800"
+                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-background/90 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-slate-800"
                 >
                   <ul className="py-1 text-base">
                     {companySuggestions.map((suggestion, index) => (
                       <li
                         key={index}
                         onClick={() => selectCompanySuggestion(suggestion)}
-                        className="px-4 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
+                        className="px-4 py-2 cursor-pointer hover:bg-accent/20 text-foreground"
                       >
                         {suggestion}
                       </li>
