@@ -1,8 +1,9 @@
 # Welcome to My project
 
 ## Project info
+JOBGENISIS.
 
--- JobGenisis is a platform where u can check probability of getting ur job chances by uploading ur resume , taking online assessment and interview process 
+- JobGenisis is a platform where u can check probability of getting ur job chances by uploading ur resume , taking online assessment and interview process 
  
  
 
