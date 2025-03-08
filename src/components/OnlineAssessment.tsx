@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -181,13 +182,13 @@ const OnlineAssessment = () => {
 
     if (!isPassed) {
       setSuggestedTopics(generateImprovementTopics());
-      setFailureRedirectTimer(60);
+      setFailureRedirectTimer(10); // Changed to 10 minutes (600 seconds)
 
       const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
       const company = resumeData.company;
 
       const cooldownDate = new Date();
-      cooldownDate.setDate(cooldownDate.getDate() + 14);
+      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10); // Set cooldown to 10 minutes
 
       failedCompanies[company] = {
         timestamp: new Date().toISOString(),
@@ -204,12 +205,17 @@ const OnlineAssessment = () => {
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
     localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
+    localStorage.setItem('interviewComplete', 'true'); // Mark the interview as complete
 
     if (isPassed) {
       toast({
         title: "Assessment Complete",
         description: `Congratulations! You scored ${percentageScore}%, which meets the ${cutoffScore}% cutoff for ${resumeData.company}.`,
       });
+      // Navigate to results page
+      setTimeout(() => {
+        navigate('/results');
+      }, 1500);
     } else {
       toast({
         title: "Assessment Not Passed",
@@ -221,6 +227,10 @@ const OnlineAssessment = () => {
 
   const continueToInterview = () => {
     navigate('/interview');
+  };
+
+  const continueToResults = () => {
+    navigate('/results');
   };
 
   const getCurrentQuestionDifficulty = () => {
@@ -312,8 +322,8 @@ const OnlineAssessment = () => {
             className="mb-6 h-2"
           />
           
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6 flex-1">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">
+          <div className="bg-slate-800 text-white rounded-xl shadow-md p-6 mb-6 flex-1">
+            <h3 className="text-xl font-semibold mb-4">
               {technicalQuestions[currentQuestion].question}
             </h3>
             
@@ -325,14 +335,14 @@ const OnlineAssessment = () => {
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedOption === index
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800"
+                      : "border-slate-700 hover:border-slate-600 hover:bg-slate-700 text-white"
                   }`}
                 >
                   <div className="flex items-center">
                     <div className={`h-5 w-5 mr-3 rounded-full flex items-center justify-center ${
                       selectedOption === index
                         ? "bg-primary text-white"
-                        : "border border-gray-300"
+                        : "border border-slate-500"
                     }`}>
                       {selectedOption === index && <CheckCircle2 className="h-4 w-4" />}
                     </div>
@@ -342,7 +352,7 @@ const OnlineAssessment = () => {
               ))}
             </div>
             
-            <div className="mt-6 border-t pt-4 text-sm text-gray-500">
+            <div className="mt-6 border-t border-slate-700 pt-4 text-sm text-slate-300">
               <div className="flex items-center">
                 <AlertTriangle className="h-4 w-4 mr-2 text-orange-500" />
                 <span>
@@ -382,7 +392,7 @@ const OnlineAssessment = () => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center"
+            className="bg-slate-800 text-white rounded-xl shadow-lg p-8 max-w-md w-full text-center"
           >
             {(() => {
               const maxPossibleScore = technicalQuestions.reduce((total, q) => {
@@ -400,39 +410,39 @@ const OnlineAssessment = () => {
                     </div>
                     
                     <h2 className="text-2xl font-bold mb-2">Assessment Complete!</h2>
-                    <p className="text-gray-600 mb-2">
+                    <p className="text-gray-300 mb-2">
                       You scored {percentageScore}% on the technical assessment
                     </p>
                     
                     <div className="flex justify-between items-center text-sm mb-2">
                       <span>Company cutoff: {cutoffScore}%</span>
-                      <span className="text-green-600">PASSED</span>
+                      <span className="text-green-500">PASSED</span>
                     </div>
                     
-                    <div className="h-4 bg-gray-100 rounded-full mb-6 overflow-hidden">
+                    <div className="h-4 bg-slate-700 rounded-full mb-6 overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-green-500 to-blue-500"
                         style={{ width: `${percentageScore}%` }}
                       ></div>
                     </div>
                     
-                    <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                    <div className="bg-slate-700 p-4 rounded-lg mb-6 text-left">
                       <h4 className="font-medium mb-2">Assessment Summary:</h4>
-                      <ul className="space-y-1 text-sm">
+                      <ul className="space-y-1 text-sm text-gray-300">
                         <li>Total questions: {technicalQuestions.length}</li>
                         <li>Correct answers: {technicalQuestions.length - incorrectAnswers}</li>
                         <li>Incorrect answers: {incorrectAnswers}</li>
                         <li>Points earned: {score.toFixed(1)} / {maxPossibleScore}</li>
                         <li className="font-medium mt-2">
-                          Result: <span className="text-green-600">
+                          Result: <span className="text-green-500">
                             You met the company's requirements!
                           </span>
                         </li>
                       </ul>
                     </div>
                     
-                    <Button onClick={continueToInterview} className="button-glow w-full">
-                      Continue to Interview <ArrowRight className="ml-2 h-5 w-5" />
+                    <Button onClick={continueToResults} className="button-glow w-full">
+                      View Detailed Results <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </>
                 );
@@ -444,38 +454,38 @@ const OnlineAssessment = () => {
                     </div>
                     
                     <h2 className="text-2xl font-bold mb-2">Assessment Not Passed</h2>
-                    <p className="text-gray-600 mb-2">
+                    <p className="text-gray-300 mb-2">
                       You scored {percentageScore}% on the technical assessment
                     </p>
                     
                     <div className="flex justify-between items-center text-sm mb-2">
                       <span>Company cutoff: {cutoffScore}%</span>
-                      <span className="text-red-600">NOT PASSED</span>
+                      <span className="text-red-500">NOT PASSED</span>
                     </div>
                     
-                    <div className="h-4 bg-gray-100 rounded-full mb-6 overflow-hidden">
+                    <div className="h-4 bg-slate-700 rounded-full mb-6 overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-orange-500 to-red-500"
                         style={{ width: `${percentageScore}%` }}
                       ></div>
                     </div>
                     
-                    <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                    <div className="bg-slate-700 p-4 rounded-lg mb-6 text-left">
                       <h4 className="font-medium mb-2">Assessment Summary:</h4>
-                      <ul className="space-y-1 text-sm">
+                      <ul className="space-y-1 text-sm text-gray-300">
                         <li>Total questions: {technicalQuestions.length}</li>
                         <li>Correct answers: {technicalQuestions.length - incorrectAnswers}</li>
                         <li>Incorrect answers: {incorrectAnswers}</li>
                         <li>Points earned: {score.toFixed(1)} / {maxPossibleScore}</li>
                         <li className="font-medium mt-2">
-                          Result: <span className="text-red-600">
+                          Result: <span className="text-red-500">
                             You didn't meet the company's requirements
                           </span>
                         </li>
                       </ul>
                     </div>
                     
-                    <div className="border-t pt-4 mt-4">
+                    <div className="border-t border-slate-700 pt-4 mt-4">
                       <h3 className="font-semibold text-lg mb-3 text-left flex items-center">
                         <BookOpen className="h-5 w-5 mr-2 text-primary" />
                         Suggested Areas for Improvement:
@@ -493,17 +503,17 @@ const OnlineAssessment = () => {
                       
                       <div className="bg-primary/10 p-3 rounded-lg text-sm mb-4 text-left">
                         <p className="font-medium text-primary mb-1">Note:</p>
-                        <p>You can reapply to {resumeData.company} after 14 days. Use this time to improve your skills in the areas mentioned above.</p>
+                        <p>You can reapply to {resumeData.company} after 10 minutes. Use this time to improve your skills in the areas mentioned above.</p>
                       </div>
                       
-                      <div className="text-center text-sm text-gray-600 mb-4">
+                      <div className="text-center text-sm text-gray-400 mb-4">
                         Redirecting to home page in {failureRedirectTimer} seconds
                       </div>
                       
                       <Button 
                         onClick={() => navigate('/')} 
                         variant="outline" 
-                        className="w-full"
+                        className="w-full text-white border-slate-600 hover:bg-slate-700"
                       >
                         Return Home
                       </Button>

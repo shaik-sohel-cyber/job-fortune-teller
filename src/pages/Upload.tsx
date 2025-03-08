@@ -8,7 +8,7 @@ const Upload = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4 flex flex-col items-center justify-center"
+      className="min-h-screen pt-20 pb-10 px-4 flex flex-col items-center justify-center bg-gradient-to-b from-black to-slate-900"
     >
       <ResumeUpload />
     </motion.div>
