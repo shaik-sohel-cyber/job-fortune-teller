@@ -10,7 +10,37 @@ const ResultsPage = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Validate that the user has completed the required steps
+    // Validate that the user has completed the entire process in order
+    if (!localStorage.getItem('resumeData')) {
+      toast({
+        title: "Resume not uploaded",
+        description: "Please upload your resume first.",
+        variant: "destructive",
+      });
+      navigate('/upload');
+      return;
+    }
+
+    if (!localStorage.getItem('verificationResults')) {
+      toast({
+        title: "Resume not verified",
+        description: "Please complete the verification process first.",
+        variant: "destructive",
+      });
+      navigate('/verification');
+      return;
+    }
+
+    if (!localStorage.getItem('assessmentScore')) {
+      toast({
+        title: "Assessment not completed",
+        description: "Please complete the technical assessment first.",
+        variant: "destructive",
+      });
+      navigate('/assessment');
+      return;
+    }
+
     if (!localStorage.getItem('interviewComplete')) {
       toast({
         title: "Interview not completed",
