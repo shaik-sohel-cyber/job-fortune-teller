@@ -294,18 +294,18 @@ const ResumeUpload = () => {
         });
       }
       
-      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`;
+      let emailValue = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`;
       const phoneNum = `+1 ${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`;
       
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const emailMatches = fileContent.match(emailRegex);
       if (emailMatches && emailMatches.length > 0) {
-        email = emailMatches[0];
+        emailValue = emailMatches[0];
       }
       
       const parsedData: ResumeData = {
         name: fullName,
-        email: email,
+        email: emailValue,
         phone: phoneNum,
         skills: skills,
         education: education,
