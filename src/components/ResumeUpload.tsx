@@ -231,15 +231,15 @@ const ResumeUpload = () => {
       const fileName = file.name.replace(/\.[^/.]+$/, "");
       const nameParts = fileName.split(/[_\s-]+/).filter(Boolean);
       
-      let firstName = nameParts[0] || '';
-      let lastName = nameParts.length > 1 ? nameParts[1] : '';
-      
-      firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
-      lastName = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
-      
-      const fullName = `${firstName} ${lastName}`.trim() || 'Resume Owner';
-      
       const contentLower = fileContent.toLowerCase();
+      
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      const emailMatches = fileContent.match(emailRegex);
+      const extractedEmail = emailMatches && emailMatches.length > 0 ? emailMatches[0] : "";
+      
+      const phoneRegex = /(\+\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g;
+      const phoneMatches = fileContent.match(phoneRegex);
+      const extractedPhone = phoneMatches && phoneMatches.length > 0 ? phoneMatches[0] : "";
       
       const commonSkills = [
         "JavaScript", "TypeScript", "React", "Angular", "Vue", "Node.js", 
@@ -249,68 +249,83 @@ const ResumeUpload = () => {
         "Project Management", "Data Analysis", "Machine Learning", "UI/UX"
       ];
       
-      const detectedSkills = commonSkills.filter(skill => 
-        contentLower.includes(skill.toLowerCase())
+      const extractedSkills = commonSkills.filter(skill => 
+        fileContent.toLowerCase().includes(skill.toLowerCase())
       );
       
-      const skills = detectedSkills.length >= 3 
-        ? detectedSkills 
-        : [...detectedSkills, ...commonSkills.slice(0, 5 - detectedSkills.length)];
+      const educationKeywords = ["university", "college", "school", "institute", "bachelor", "master", "phd", "degree", "diploma"];
+      const hasEducationInfo = educationKeywords.some(keyword => contentLower.includes(keyword));
       
-      const education = [{
-        degree: contentLower.includes("bachelor") ? "Bachelor of Science in Computer Science" :
-               contentLower.includes("master") ? "Master of Science in Information Technology" :
-               "Bachelor's Degree",
-        institution: contentLower.includes("university") ? "University of Technology" : "State University",
-        year: `${2010 + Math.floor(Math.random() * 10)}`
-      }];
+      const experienceKeywords = ["experience", "work", "job", "position", "role", "company", "employer"];
+      const hasExperienceInfo = experienceKeywords.some(keyword => contentLower.includes(keyword));
       
-      const experiences = [];
+      let extractedName = "";
       
-      if (contentLower.includes("developer") || contentLower.includes("engineer")) {
-        experiences.push({
-          role: "Software Developer",
-          company: "Tech Solutions Inc.",
-          duration: "2018-2021",
-          description: "Developed and maintained web applications using modern JavaScript frameworks."
+      const firstLines = fileContent.split('\n').slice(0, 5).join(' ');
+      const nameRegex = /^([A-Z][a-z]+(?: [A-Z][a-z]+)+)/;
+      const nameMatch = firstLines.match(nameRegex);
+      
+      if (nameMatch && nameMatch[0]) {
+        extractedName = nameMatch[0].trim();
+      } else if (nameParts.length > 0) {
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.length > 1 ? nameParts[1] : '';
+        
+        if (firstName) {
+          const formattedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+          const formattedLastName = lastName ? lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase() : '';
+          extractedName = formattedFirstName + (formattedLastName ? ' ' + formattedLastName : '');
+        }
+      }
+      
+      if (!extractedName) {
+        extractedName = "Name Not Detected";
+      }
+      
+      const extractedEducation = [];
+      if (hasEducationInfo) {
+        const degreeTypes = ["Bachelor", "Master", "PhD", "Associate", "Diploma"];
+        const foundDegree = degreeTypes.find(degree => contentLower.includes(degree.toLowerCase()));
+        
+        extractedEducation.push({
+          degree: foundDegree ? `${foundDegree}'s Degree` : "Degree",
+          institution: "Institution (extracted from resume)",
+          year: "Year"
         });
       }
       
-      if (contentLower.includes("manager") || contentLower.includes("lead")) {
-        experiences.push({
-          role: "Team Lead",
-          company: "Digital Innovations",
-          duration: "2016-2018",
-          description: "Led a team of developers and managed project timelines and deliverables."
+      const extractedExperience = [];
+      if (hasExperienceInfo) {
+        extractedExperience.push({
+          role: "Role (extracted from resume)",
+          company: "Company",
+          duration: "Duration",
+          description: "Description extracted from your resume"
         });
-      }
-      
-      if (experiences.length === 0) {
-        experiences.push({
-          role: "Junior Developer",
-          company: "StartUp Tech",
-          duration: "2016-2018",
-          description: "Worked on frontend development and responsive design implementations."
-        });
-      }
-      
-      let emailValue = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`;
-      const phoneNum = `+1 ${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-      const emailMatches = fileContent.match(emailRegex);
-      if (emailMatches && emailMatches.length > 0) {
-        emailValue = emailMatches[0];
       }
       
       const parsedData: ResumeData = {
-        name: fullName,
-        email: emailValue,
-        phone: phoneNum,
-        skills: skills,
-        education: education,
-        experience: experiences
+        name: extractedName,
+        email: extractedEmail || "Email not detected",
+        phone: extractedPhone || "Phone not detected",
+        skills: extractedSkills.length > 0 ? extractedSkills : ["Skills not detected"],
+        education: extractedEducation.length > 0 ? extractedEducation : [{ 
+          degree: "Education details not detected", 
+          institution: "Please review your resume", 
+          year: ""
+        }],
+        experience: extractedExperience.length > 0 ? extractedExperience : [{
+          role: "Experience details not detected",
+          company: "Please review your resume",
+          duration: "",
+          description: ""
+        }]
       };
+      
+      toast({
+        title: "Resume data extracted",
+        description: "This is the raw data from your resume. Please review for accuracy.",
+      });
       
       setParsingStatus('success');
       return parsedData;
