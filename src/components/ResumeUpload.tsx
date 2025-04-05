@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,10 @@ interface UploadedFile {
   size: number;
   type: string;
   content?: string | ArrayBuffer | null;
+}
+
+interface ResumeUploadProps {
+  onResumeUploaded?: (data: any) => void;
 }
 
 const JOB_TITLE_SUGGESTIONS = [
@@ -48,7 +51,7 @@ const COMPANY_SUGGESTIONS = [
   "LinkedIn"
 ];
 
-const ResumeUpload = () => {
+const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [jobTitle, setJobTitle] = useState("");
@@ -67,6 +70,27 @@ const ResumeUpload = () => {
   
   const jobTitleRef = useRef<HTMLDivElement>(null);
   const companyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const storedData = localStorage.getItem('resumeData');
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        setJobTitle(parsedData.jobTitle || "");
+        setCompany(parsedData.company || "");
+        if (parsedData.fileName) {
+          setUploadedFile({
+            name: parsedData.fileName,
+            size: 0,
+            type: "",
+            content: parsedData.fileContent
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing stored resume data", error);
+      }
+    }
+  }, []);
 
   const filterJobTitleSuggestions = (input: string) => {
     const filtered = JOB_TITLE_SUGGESTIONS.filter(item => 
@@ -160,7 +184,11 @@ const ResumeUpload = () => {
       'application/vnd.oasis.opendocument.text'
     ];
     
-    if (!validTypes.includes(file.type)) {
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.pdf', '.docx', '.doc', '.txt', '.odt'];
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!validTypes.includes(file.type) && !hasValidExtension) {
       return false;
     }
 
@@ -175,14 +203,31 @@ const ResumeUpload = () => {
   const extractTextFromFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      const fileName = file.name.toLowerCase();
       
       reader.onload = (event) => {
         if (event.target?.result) {
           if (typeof event.target.result === 'string') {
             resolve(event.target.result);
           } else {
-            // For binary files (like PDFs), we'll show a placeholder
-            resolve(`[Binary content from ${file.name}] - Preview not available for this file type.`);
+            const uint8Array = new Uint8Array(event.target.result as ArrayBuffer);
+            let binary = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+              binary += String.fromCharCode(uint8Array[i]);
+            }
+            
+            if (fileName.endsWith('.pdf')) {
+              resolve(`[PDF Content from ${file.name}]\n\nThis is the raw binary content of your PDF. In a production environment, we would use a PDF parsing library.`);
+            } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+              resolve(`[DOCX/DOC Content from ${file.name}]\n\nThis is the raw binary content of your document. In a production environment, we would use a document parsing library.`);
+            } else {
+              try {
+                const text = decodeURIComponent(escape(binary));
+                resolve(text);
+              } catch (e) {
+                resolve(binary);
+              }
+            }
           }
         } else {
           reject(new Error('Failed to read file content'));
@@ -193,12 +238,10 @@ const ResumeUpload = () => {
         reject(new Error('Error reading file'));
       };
       
-      if (file.type === 'text/plain') {
+      if (file.type === 'text/plain' || fileName.endsWith('.txt')) {
         reader.readAsText(file);
       } else {
-        // For non-text files, use readAsText as a fallback
-        // In a production app, you'd want to use specific libraries for PDFs, DOCXs, etc.
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
       }
     });
   };
@@ -304,26 +347,26 @@ const ResumeUpload = () => {
         fileName: uploadedFile.name,
         jobTitle,
         company,
-        fileContent: uploadedFile.content
+        fileContent: uploadedFile.content,
+        uploadTime: new Date().toISOString()
       };
       
       localStorage.setItem('resumeData', JSON.stringify(resumeDataToStore));
       
-      // Extract email from content if it exists
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-      const content = typeof uploadedFile.content === 'string' ? uploadedFile.content : '';
-      const emailMatches = content.match(emailRegex);
-      const email = emailMatches && emailMatches.length > 0 ? emailMatches[0] : '';
+      if (onResumeUploaded) {
+        onResumeUploaded(resumeDataToStore);
+      }
       
-      localStorage.setItem('userEmail', email);
+      const event = new CustomEvent('resumeUploaded', { detail: resumeDataToStore });
+      window.dispatchEvent(event);
       
       toast({
         title: "Resume processed successfully",
-        description: "Proceeding to resume verification.",
+        description: "Your resume has been processed. You can now proceed to verification.",
       });
       
       navigate('/verification');
-    }, 1000);
+    }, 800);
   };
 
   return (
@@ -594,7 +637,7 @@ const ResumeUpload = () => {
             </div>
           ) : (
             <div className="flex items-center">
-              Continue to Interview <ArrowRight className="ml-2" />
+              Continue <ArrowRight className="ml-2" />
             </div>
           )}
         </Button>
