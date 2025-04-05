@@ -15,28 +15,6 @@ interface UploadedFile {
   content?: string | ArrayBuffer | null;
 }
 
-interface Education {
-  degree: string;
-  institution: string;
-  year: string;
-}
-
-interface Experience {
-  role: string;
-  company: string;
-  duration: string;
-  description: string;
-}
-
-interface ResumeData {
-  name: string;
-  email: string;
-  phone: string;
-  skills: string[];
-  education: Education[];
-  experience: Experience[];
-}
-
 const JOB_TITLE_SUGGESTIONS = [
   "Software Engineer",
   "Frontend Developer", 
@@ -70,27 +48,14 @@ const COMPANY_SUGGESTIONS = [
   "LinkedIn"
 ];
 
-// Common tech skills for detection
-const COMMON_SKILLS = [
-  "JavaScript", "TypeScript", "React", "Angular", "Vue", "Node.js", 
-  "Python", "Java", "C#", "PHP", "Ruby", "Go", "SQL", "MongoDB",
-  "AWS", "Docker", "Kubernetes", "CI/CD", "Git", "Agile", "Scrum",
-  "Communication", "Leadership", "Problem Solving", "Teamwork",
-  "Project Management", "Data Analysis", "Machine Learning", "UI/UX",
-  "HTML", "CSS", "REST API", "GraphQL", "Redux", "Next.js", "Express",
-  "Django", "Flask", "Spring", "ASP.NET", "Laravel", "WordPress"
-];
-
 const ResumeUpload = () => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showResumeReview, setShowResumeReview] = useState(false);
-  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [showResumePreview, setShowResumePreview] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
-  const [parsingStatus, setParsingStatus] = useState<'idle' | 'parsing' | 'success' | 'error'>('idle');
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -216,9 +181,8 @@ const ResumeUpload = () => {
           if (typeof event.target.result === 'string') {
             resolve(event.target.result);
           } else {
-            // For binary files like PDFs, this is a placeholder
-            // In a real app, you would use a PDF.js or similar library
-            resolve(`${file.name} content`);
+            // For binary files (like PDFs), we'll show a placeholder
+            resolve(`[Binary content from ${file.name}] - Preview not available for this file type.`);
           }
         } else {
           reject(new Error('Failed to read file content'));
@@ -229,200 +193,14 @@ const ResumeUpload = () => {
         reject(new Error('Error reading file'));
       };
       
-      if (file.type === 'text/plain' || file.type === 'application/json') {
+      if (file.type === 'text/plain') {
         reader.readAsText(file);
       } else {
-        // For PDFs and DOCXs we'd normally use specific libraries
-        // Here we'll just read as text for demonstration
+        // For non-text files, use readAsText as a fallback
+        // In a production app, you'd want to use specific libraries for PDFs, DOCXs, etc.
         reader.readAsText(file);
       }
     });
-  };
-
-  const extractResumeInfo = async (file: File, fileContent: string): Promise<ResumeData> => {
-    setParsingStatus('parsing');
-    
-    try {
-      // More advanced name extraction
-      let extractedName = "";
-      
-      // Try to find a name at the beginning of the resume (common format)
-      const nameRegex = /^([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,2})/m;
-      const nameMatch = fileContent.match(nameRegex);
-      
-      if (nameMatch && nameMatch[0]) {
-        extractedName = nameMatch[0].trim();
-      } else {
-        // Try from filename
-        const fileName = file.name.replace(/\.[^/.]+$/, "");
-        const nameParts = fileName.split(/[_\s-]+/).filter(Boolean);
-        
-        if (nameParts.length > 0) {
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.length > 1 ? nameParts[1] : '';
-          
-          if (firstName) {
-            const formattedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
-            const formattedLastName = lastName ? ' ' + lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase() : '';
-            extractedName = formattedFirstName + formattedLastName;
-          }
-        }
-      }
-      
-      // Email extraction with regex
-      let extractedEmail = "Email not detected";
-      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-      const emailMatches = fileContent.match(emailRegex);
-      
-      if (emailMatches && emailMatches.length > 0) {
-        extractedEmail = emailMatches[0];
-      }
-      
-      // Phone extraction with various formats
-      let extractedPhone = "Phone not detected";
-      const phoneRegex = /(?:\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-      const phoneMatches = fileContent.match(phoneRegex);
-      
-      if (phoneMatches && phoneMatches.length > 0) {
-        extractedPhone = phoneMatches[0];
-      }
-      
-      // Skills extraction
-      const contentLower = fileContent.toLowerCase();
-      const extractedSkills = COMMON_SKILLS.filter(skill => 
-        contentLower.includes(skill.toLowerCase())
-      );
-      
-      // Education extraction
-      const degrees = ["bachelor", "master", "phd", "associate", "diploma", "certificate", "degree"];
-      const institutions = ["university", "college", "institute", "school"];
-      const years = /\b(19|20)\d{2}\b/g;
-      
-      const extractedEducation: Education[] = [];
-      
-      // Check for degree mentions
-      for (const degreeType of degrees) {
-        if (contentLower.includes(degreeType)) {
-          // Find nearby institution
-          let institution = "Institution not specified";
-          for (const instType of institutions) {
-            const instRegex = new RegExp(`\\b${instType}\\s+\\w+(?:\\s+\\w+){0,3}\\b`, 'gi');
-            const instMatch = fileContent.match(instRegex);
-            if (instMatch && instMatch.length > 0) {
-              institution = instMatch[0];
-              break;
-            }
-          }
-          
-          // Find a year
-          let year = "";
-          const yearMatches = fileContent.match(years);
-          if (yearMatches && yearMatches.length > 0) {
-            year = yearMatches[0];
-          }
-          
-          extractedEducation.push({
-            degree: `${degreeType.charAt(0).toUpperCase() + degreeType.slice(1)}`,
-            institution,
-            year
-          });
-          
-          break; // Just get the first degree for now
-        }
-      }
-      
-      // If no education found
-      if (extractedEducation.length === 0) {
-        extractedEducation.push({
-          degree: "Education details not detected",
-          institution: "Please review your resume",
-          year: ""
-        });
-      }
-      
-      // Experience extraction
-      const extractedExperience: Experience[] = [];
-      
-      // Look for job titles
-      const jobTitles = [...JOB_TITLE_SUGGESTIONS, "engineer", "developer", "manager", "director", "analyst", "designer", "specialist"];
-      const companies = ["inc", "llc", "corp", "corporation", "company", "technologies", "solutions"];
-      
-      for (const title of jobTitles) {
-        if (contentLower.includes(title.toLowerCase())) {
-          // Try to find company near job title
-          let company = "Company not specified";
-          
-          // Look for company indicators
-          for (const companyIndicator of companies) {
-            const companyRegex = new RegExp(`\\b\\w+(?:\\s+\\w+){0,3}\\s+${companyIndicator}\\b`, 'gi');
-            const companyMatch = fileContent.match(companyRegex);
-            if (companyMatch && companyMatch.length > 0) {
-              company = companyMatch[0];
-              break;
-            }
-          }
-          
-          // Look for duration patterns like 2015-2020 or Jan 2015 - Dec 2020
-          let duration = "";
-          const durationRegex = /\b(19|20)\d{2}\s*[-–—to]\s*(19|20)\d{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(19|20)\d{2}\s*[-–—to]\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(19|20)\d{2}/gi;
-          const durationMatch = fileContent.match(durationRegex);
-          
-          if (durationMatch && durationMatch.length > 0) {
-            duration = durationMatch[0];
-          }
-          
-          // Extract a snippet of text that might be a description
-          let description = "";
-          const sentenceRegex = new RegExp(`[^.!?]*${title}[^.!?]*[.!?]`, 'i');
-          const sentenceMatch = fileContent.match(sentenceRegex);
-          
-          if (sentenceMatch && sentenceMatch.length > 0) {
-            description = sentenceMatch[0].trim();
-          }
-          
-          extractedExperience.push({
-            role: title.charAt(0).toUpperCase() + title.slice(1),
-            company,
-            duration: duration || "Duration not specified",
-            description: description || "Description not available"
-          });
-          
-          break; // Just get the first relevant experience
-        }
-      }
-      
-      // If no experience found
-      if (extractedExperience.length === 0) {
-        extractedExperience.push({
-          role: "Experience details not detected",
-          company: "Please review your resume",
-          duration: "",
-          description: ""
-        });
-      }
-      
-      const parsedData: ResumeData = {
-        name: extractedName || "Name not detected",
-        email: extractedEmail,
-        phone: extractedPhone,
-        skills: extractedSkills.length > 0 ? extractedSkills : ["Skills not detected"],
-        education: extractedEducation,
-        experience: extractedExperience
-      };
-      
-      toast({
-        title: "Resume data extracted",
-        description: "This is the data extracted from your resume. Please review for accuracy.",
-      });
-      
-      setParsingStatus('success');
-      return parsedData;
-      
-    } catch (error) {
-      console.error("Error parsing resume:", error);
-      setParsingStatus('error');
-      throw new Error("Failed to parse resume content");
-    }
   };
 
   const handleFile = async (file: File) => {
@@ -446,7 +224,7 @@ const ResumeUpload = () => {
 
     toast({
       title: "File uploaded successfully",
-      description: `${file.name} has been uploaded. Analyzing content...`,
+      description: `${file.name} has been uploaded. Click 'View Resume' to preview.`,
     });
     
     setIsLoading(true);
@@ -455,23 +233,18 @@ const ResumeUpload = () => {
       const fileContent = await extractTextFromFile(file);
       
       setUploadedFile(prev => prev ? {...prev, content: fileContent} : null);
-      
-      const parsed = await extractResumeInfo(file, fileContent);
-      setResumeData(parsed);
       setIsLoading(false);
-      setShowResumeReview(true);
       
       toast({
-        title: "Resume analyzed",
-        description: "Please review the extracted information for accuracy.",
+        title: "Resume ready",
+        description: "You can now preview your resume or continue to the next step.",
       });
     } catch (error) {
       setIsLoading(false);
-      setParsingStatus('error');
-      setResumeError("Failed to analyze resume content. Please try a different file.");
+      setResumeError("Failed to read resume content. Please try a different file.");
       toast({
-        title: "Resume analysis failed",
-        description: "Could not extract information from the uploaded file.",
+        title: "Resume reading failed",
+        description: "Could not read the uploaded file.",
         variant: "destructive",
       });
     }
@@ -485,9 +258,7 @@ const ResumeUpload = () => {
 
   const removeFile = () => {
     setUploadedFile(null);
-    setResumeData(null);
-    setShowResumeReview(false);
-    setParsingStatus('idle');
+    setShowResumePreview(false);
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -499,8 +270,8 @@ const ResumeUpload = () => {
     else return (bytes / 1048576).toFixed(1) + " MB";
   };
 
-  const confirmResumeData = () => {
-    setShowResumeReview(false);
+  const toggleResumePreview = () => {
+    setShowResumePreview(!showResumePreview);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -533,11 +304,18 @@ const ResumeUpload = () => {
         fileName: uploadedFile.name,
         jobTitle,
         company,
-        candidateInfo: resumeData
+        fileContent: uploadedFile.content
       };
       
       localStorage.setItem('resumeData', JSON.stringify(resumeDataToStore));
-      localStorage.setItem('userEmail', resumeData?.email || '');
+      
+      // Extract email from content if it exists
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      const content = typeof uploadedFile.content === 'string' ? uploadedFile.content : '';
+      const emailMatches = content.match(emailRegex);
+      const email = emailMatches && emailMatches.length > 0 ? emailMatches[0] : '';
+      
+      localStorage.setItem('userEmail', email);
       
       toast({
         title: "Resume processed successfully",
@@ -565,92 +343,42 @@ const ResumeUpload = () => {
         </div>
 
         <AnimatePresence mode="wait">
-          {showResumeReview && resumeData ? (
+          {showResumePreview && uploadedFile && uploadedFile.content ? (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-slate-800 rounded-xl p-6 border border-slate-700 text-white shadow-lg"
+              className="bg-white rounded-xl p-6 border border-slate-200 text-slate-900 shadow-lg"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Resume Information Review</h3>
+                <h3 className="text-xl font-semibold">Resume Preview</h3>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setShowResumeReview(false)}
-                  className="text-white hover:bg-slate-700"
+                  onClick={toggleResumePreview}
+                  className="text-slate-800 hover:bg-slate-100"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-slate-400">Personal Information</h4>
-                  <p className="text-lg font-medium mt-1">{resumeData.name}</p>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div className="text-sm text-slate-300">
-                      <span className="text-slate-400">Email:</span> {resumeData.email}
-                    </div>
-                    <div className="text-sm text-slate-300">
-                      <span className="text-slate-400">Phone:</span> {resumeData.phone}
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-400">Skills</h4>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {resumeData.skills.map((skill, index) => (
-                      <span 
-                        key={index} 
-                        className="bg-slate-700 text-white px-2 py-1 rounded text-xs"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-400">Education</h4>
-                  <div className="space-y-2 mt-2">
-                    {resumeData.education.map((edu, index) => (
-                      <div key={index} className="bg-slate-700/50 p-2 rounded">
-                        <p className="font-medium">{edu.degree}</p>
-                        <p className="text-sm text-slate-300">{edu.institution}, {edu.year}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-slate-400">Experience</h4>
-                  <div className="space-y-2 mt-2">
-                    {resumeData.experience.map((exp, index) => (
-                      <div key={index} className="bg-slate-700/50 p-2 rounded">
-                        <p className="font-medium">{exp.role}</p>
-                        <p className="text-sm text-slate-300">{exp.company}, {exp.duration}</p>
-                        <p className="text-xs text-slate-400 mt-1">{exp.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="max-h-96 overflow-auto bg-slate-50 p-4 rounded border border-slate-200 font-mono text-sm whitespace-pre-wrap">
+                {typeof uploadedFile.content === 'string' ? uploadedFile.content : 'Unable to display content'}
               </div>
               
               <div className="flex justify-end mt-6">
                 <Button 
                   variant="outline" 
-                  className="mr-2 text-white border-slate-600 hover:bg-slate-700"
+                  className="mr-2 border-slate-300 hover:bg-slate-100"
                   onClick={removeFile}
                 >
                   Upload Different Resume
                 </Button>
                 <Button 
-                  onClick={confirmResumeData}
+                  onClick={toggleResumePreview}
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
-                  Confirm Information
+                  Confirm Resume
                 </Button>
               </div>
             </motion.div>
@@ -824,17 +552,7 @@ const ResumeUpload = () => {
                           {isLoading ? (
                             <div className="flex items-center mt-2 text-blue-600 text-sm">
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Analyzing resume content...
-                            </div>
-                          ) : parsingStatus === 'success' ? (
-                            <div className="flex items-center mt-2 text-green-600 text-sm">
-                              <Check className="h-4 w-4 mr-1" />
-                              Resume analyzed successfully
-                            </div>
-                          ) : parsingStatus === 'error' ? (
-                            <div className="flex items-center mt-2 text-red-600 text-sm">
-                              <AlertTriangle className="h-4 w-4 mr-1" />
-                              Error analyzing resume
+                              Processing resume...
                             </div>
                           ) : (
                             <div className="flex items-center mt-2 text-green-600 text-sm">
@@ -843,16 +561,15 @@ const ResumeUpload = () => {
                             </div>
                           )}
                           
-                          {uploadedFile && !isLoading && !showResumeReview && (
+                          {uploadedFile && !isLoading && (
                             <Button
                               type="button"
                               variant="link"
-                              onClick={() => setShowResumeReview(true)}
+                              onClick={toggleResumePreview}
                               className="mt-2 p-0 h-auto text-blue-600 hover:text-blue-800"
-                              disabled={!resumeData}
                             >
                               <FileSymlink className="h-3 w-3 mr-1" />
-                              {resumeData ? "View Extracted Information" : "Processing..."}
+                              View Resume
                             </Button>
                           )}
                         </div>
@@ -867,7 +584,7 @@ const ResumeUpload = () => {
 
         <Button
           type="submit"
-          disabled={isLoading || !uploadedFile || !resumeData}
+          disabled={isLoading || !uploadedFile}
           className="w-full button-glow transition-all duration-300"
         >
           {isLoading ? (
