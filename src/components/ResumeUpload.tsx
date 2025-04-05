@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,17 @@ const COMPANY_SUGGESTIONS = [
   "Airbnb",
   "Spotify",
   "LinkedIn"
+];
+
+// Common tech skills for detection
+const COMMON_SKILLS = [
+  "JavaScript", "TypeScript", "React", "Angular", "Vue", "Node.js", 
+  "Python", "Java", "C#", "PHP", "Ruby", "Go", "SQL", "MongoDB",
+  "AWS", "Docker", "Kubernetes", "CI/CD", "Git", "Agile", "Scrum",
+  "Communication", "Leadership", "Problem Solving", "Teamwork",
+  "Project Management", "Data Analysis", "Machine Learning", "UI/UX",
+  "HTML", "CSS", "REST API", "GraphQL", "Redux", "Next.js", "Express",
+  "Django", "Flask", "Spring", "ASP.NET", "Laravel", "WordPress"
 ];
 
 const ResumeUpload = () => {
@@ -204,8 +216,9 @@ const ResumeUpload = () => {
           if (typeof event.target.result === 'string') {
             resolve(event.target.result);
           } else {
-            const buffer = event.target.result;
-            resolve(`Extracted content from ${file.name} (binary file)`);
+            // For binary files like PDFs, this is a placeholder
+            // In a real app, you would use a PDF.js or similar library
+            resolve(`${file.name} content`);
           }
         } else {
           reject(new Error('Failed to read file content'));
@@ -219,7 +232,9 @@ const ResumeUpload = () => {
       if (file.type === 'text/plain' || file.type === 'application/json') {
         reader.readAsText(file);
       } else {
-        reader.readAsArrayBuffer(file);
+        // For PDFs and DOCXs we'd normally use specific libraries
+        // Here we'll just read as text for demonstration
+        reader.readAsText(file);
       }
     });
   };
@@ -228,103 +243,176 @@ const ResumeUpload = () => {
     setParsingStatus('parsing');
     
     try {
-      const fileName = file.name.replace(/\.[^/.]+$/, "");
-      const nameParts = fileName.split(/[_\s-]+/).filter(Boolean);
-      
-      const contentLower = fileContent.toLowerCase();
-      
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-      const emailMatches = fileContent.match(emailRegex);
-      const extractedEmail = emailMatches && emailMatches.length > 0 ? emailMatches[0] : "";
-      
-      const phoneRegex = /(\+\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g;
-      const phoneMatches = fileContent.match(phoneRegex);
-      const extractedPhone = phoneMatches && phoneMatches.length > 0 ? phoneMatches[0] : "";
-      
-      const commonSkills = [
-        "JavaScript", "TypeScript", "React", "Angular", "Vue", "Node.js", 
-        "Python", "Java", "C#", "PHP", "Ruby", "Go", "SQL", "MongoDB",
-        "AWS", "Docker", "Kubernetes", "CI/CD", "Git", "Agile", "Scrum",
-        "Communication", "Leadership", "Problem Solving", "Teamwork",
-        "Project Management", "Data Analysis", "Machine Learning", "UI/UX"
-      ];
-      
-      const extractedSkills = commonSkills.filter(skill => 
-        fileContent.toLowerCase().includes(skill.toLowerCase())
-      );
-      
-      const educationKeywords = ["university", "college", "school", "institute", "bachelor", "master", "phd", "degree", "diploma"];
-      const hasEducationInfo = educationKeywords.some(keyword => contentLower.includes(keyword));
-      
-      const experienceKeywords = ["experience", "work", "job", "position", "role", "company", "employer"];
-      const hasExperienceInfo = experienceKeywords.some(keyword => contentLower.includes(keyword));
-      
+      // More advanced name extraction
       let extractedName = "";
       
-      const firstLines = fileContent.split('\n').slice(0, 5).join(' ');
-      const nameRegex = /^([A-Z][a-z]+(?: [A-Z][a-z]+)+)/;
-      const nameMatch = firstLines.match(nameRegex);
+      // Try to find a name at the beginning of the resume (common format)
+      const nameRegex = /^([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,2})/m;
+      const nameMatch = fileContent.match(nameRegex);
       
       if (nameMatch && nameMatch[0]) {
         extractedName = nameMatch[0].trim();
-      } else if (nameParts.length > 0) {
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.length > 1 ? nameParts[1] : '';
+      } else {
+        // Try from filename
+        const fileName = file.name.replace(/\.[^/.]+$/, "");
+        const nameParts = fileName.split(/[_\s-]+/).filter(Boolean);
         
-        if (firstName) {
-          const formattedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
-          const formattedLastName = lastName ? lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase() : '';
-          extractedName = formattedFirstName + (formattedLastName ? ' ' + formattedLastName : '');
+        if (nameParts.length > 0) {
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.length > 1 ? nameParts[1] : '';
+          
+          if (firstName) {
+            const formattedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+            const formattedLastName = lastName ? ' ' + lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase() : '';
+            extractedName = formattedFirstName + formattedLastName;
+          }
         }
       }
       
-      if (!extractedName) {
-        extractedName = "Name Not Detected";
+      // Email extraction with regex
+      let extractedEmail = "Email not detected";
+      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+      const emailMatches = fileContent.match(emailRegex);
+      
+      if (emailMatches && emailMatches.length > 0) {
+        extractedEmail = emailMatches[0];
       }
       
-      const extractedEducation = [];
-      if (hasEducationInfo) {
-        const degreeTypes = ["Bachelor", "Master", "PhD", "Associate", "Diploma"];
-        const foundDegree = degreeTypes.find(degree => contentLower.includes(degree.toLowerCase()));
-        
+      // Phone extraction with various formats
+      let extractedPhone = "Phone not detected";
+      const phoneRegex = /(?:\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
+      const phoneMatches = fileContent.match(phoneRegex);
+      
+      if (phoneMatches && phoneMatches.length > 0) {
+        extractedPhone = phoneMatches[0];
+      }
+      
+      // Skills extraction
+      const contentLower = fileContent.toLowerCase();
+      const extractedSkills = COMMON_SKILLS.filter(skill => 
+        contentLower.includes(skill.toLowerCase())
+      );
+      
+      // Education extraction
+      const degrees = ["bachelor", "master", "phd", "associate", "diploma", "certificate", "degree"];
+      const institutions = ["university", "college", "institute", "school"];
+      const years = /\b(19|20)\d{2}\b/g;
+      
+      const extractedEducation: Education[] = [];
+      
+      // Check for degree mentions
+      for (const degreeType of degrees) {
+        if (contentLower.includes(degreeType)) {
+          // Find nearby institution
+          let institution = "Institution not specified";
+          for (const instType of institutions) {
+            const instRegex = new RegExp(`\\b${instType}\\s+\\w+(?:\\s+\\w+){0,3}\\b`, 'gi');
+            const instMatch = fileContent.match(instRegex);
+            if (instMatch && instMatch.length > 0) {
+              institution = instMatch[0];
+              break;
+            }
+          }
+          
+          // Find a year
+          let year = "";
+          const yearMatches = fileContent.match(years);
+          if (yearMatches && yearMatches.length > 0) {
+            year = yearMatches[0];
+          }
+          
+          extractedEducation.push({
+            degree: `${degreeType.charAt(0).toUpperCase() + degreeType.slice(1)}`,
+            institution,
+            year
+          });
+          
+          break; // Just get the first degree for now
+        }
+      }
+      
+      // If no education found
+      if (extractedEducation.length === 0) {
         extractedEducation.push({
-          degree: foundDegree ? `${foundDegree}'s Degree` : "Degree",
-          institution: "Institution (extracted from resume)",
-          year: "Year"
-        });
-      }
-      
-      const extractedExperience = [];
-      if (hasExperienceInfo) {
-        extractedExperience.push({
-          role: "Role (extracted from resume)",
-          company: "Company",
-          duration: "Duration",
-          description: "Description extracted from your resume"
-        });
-      }
-      
-      const parsedData: ResumeData = {
-        name: extractedName,
-        email: extractedEmail || "Email not detected",
-        phone: extractedPhone || "Phone not detected",
-        skills: extractedSkills.length > 0 ? extractedSkills : ["Skills not detected"],
-        education: extractedEducation.length > 0 ? extractedEducation : [{ 
-          degree: "Education details not detected", 
-          institution: "Please review your resume", 
+          degree: "Education details not detected",
+          institution: "Please review your resume",
           year: ""
-        }],
-        experience: extractedExperience.length > 0 ? extractedExperience : [{
+        });
+      }
+      
+      // Experience extraction
+      const extractedExperience: Experience[] = [];
+      
+      // Look for job titles
+      const jobTitles = [...JOB_TITLE_SUGGESTIONS, "engineer", "developer", "manager", "director", "analyst", "designer", "specialist"];
+      const companies = ["inc", "llc", "corp", "corporation", "company", "technologies", "solutions"];
+      
+      for (const title of jobTitles) {
+        if (contentLower.includes(title.toLowerCase())) {
+          // Try to find company near job title
+          let company = "Company not specified";
+          
+          // Look for company indicators
+          for (const companyIndicator of companies) {
+            const companyRegex = new RegExp(`\\b\\w+(?:\\s+\\w+){0,3}\\s+${companyIndicator}\\b`, 'gi');
+            const companyMatch = fileContent.match(companyRegex);
+            if (companyMatch && companyMatch.length > 0) {
+              company = companyMatch[0];
+              break;
+            }
+          }
+          
+          // Look for duration patterns like 2015-2020 or Jan 2015 - Dec 2020
+          let duration = "";
+          const durationRegex = /\b(19|20)\d{2}\s*[-–—to]\s*(19|20)\d{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(19|20)\d{2}\s*[-–—to]\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(19|20)\d{2}/gi;
+          const durationMatch = fileContent.match(durationRegex);
+          
+          if (durationMatch && durationMatch.length > 0) {
+            duration = durationMatch[0];
+          }
+          
+          // Extract a snippet of text that might be a description
+          let description = "";
+          const sentenceRegex = new RegExp(`[^.!?]*${title}[^.!?]*[.!?]`, 'i');
+          const sentenceMatch = fileContent.match(sentenceRegex);
+          
+          if (sentenceMatch && sentenceMatch.length > 0) {
+            description = sentenceMatch[0].trim();
+          }
+          
+          extractedExperience.push({
+            role: title.charAt(0).toUpperCase() + title.slice(1),
+            company,
+            duration: duration || "Duration not specified",
+            description: description || "Description not available"
+          });
+          
+          break; // Just get the first relevant experience
+        }
+      }
+      
+      // If no experience found
+      if (extractedExperience.length === 0) {
+        extractedExperience.push({
           role: "Experience details not detected",
           company: "Please review your resume",
           duration: "",
           description: ""
-        }]
+        });
+      }
+      
+      const parsedData: ResumeData = {
+        name: extractedName || "Name not detected",
+        email: extractedEmail,
+        phone: extractedPhone,
+        skills: extractedSkills.length > 0 ? extractedSkills : ["Skills not detected"],
+        education: extractedEducation,
+        experience: extractedExperience
       };
       
       toast({
         title: "Resume data extracted",
-        description: "This is the raw data from your resume. Please review for accuracy.",
+        description: "This is the data extracted from your resume. Please review for accuracy.",
       });
       
       setParsingStatus('success');
