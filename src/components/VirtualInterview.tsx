@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,10 @@ import { Mic, MicOff, Send, User, ArrowRight, Clock, Code, BriefcaseBusiness, La
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface VirtualInterviewProps {
+  onInterviewStateChange?: (inProgress: boolean) => void;
+}
 
 interface Message {
   id: string;
@@ -162,7 +165,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-const VirtualInterview = () => {
+const VirtualInterview = ({ onInterviewStateChange }: VirtualInterviewProps) => {
   const [activeRound, setActiveRound] = useState("technical");
   const [interviewRounds, setInterviewRounds] = useState<InterviewRound[]>([]);
   const [input, setInput] = useState("");
@@ -308,6 +311,9 @@ const VirtualInterview = () => {
     setTimeout(() => {
       sendNextQuestion("technical");
       setIsTimerRunning(true);
+      if (onInterviewStateChange) {
+        onInterviewStateChange(true);
+      }
     }, 1500);
   }, []);
 
@@ -556,6 +562,10 @@ const VirtualInterview = () => {
   };
 
   const viewResults = () => {
+    // Notify parent that interview has ended
+    if (onInterviewStateChange) {
+      onInterviewStateChange(false);
+    }
     // Navigate to results page
     navigate('/results');
   };
