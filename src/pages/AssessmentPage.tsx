@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -94,11 +93,6 @@ const AssessmentPage = () => {
           title: "Assessment Passed",
           description: "Congratulations! You can now proceed to the interview.",
         });
-        
-        // Automatically redirect to interview page
-        setTimeout(() => {
-          navigate('/interview');
-        }, 1500);
       } else {
         // Handle failed assessment
         toast({

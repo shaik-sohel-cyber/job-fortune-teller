@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -177,19 +176,18 @@ const OnlineAssessment = () => {
       return total + (q.difficulty === "easy" ? 1 : q.difficulty === "medium" ? 2 : 3);
     }, 0);
 
-    // Ensure we're calculating percentage correctly
     const percentageScore = Math.round((score / maxPossibleScore) * 100);
     const isPassed = percentageScore >= cutoffScore;
 
     if (!isPassed) {
       setSuggestedTopics(generateImprovementTopics());
-      setFailureRedirectTimer(10); // 10 seconds for redirect timer
+      setFailureRedirectTimer(10);
 
       const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
       const company = resumeData.company;
 
       const cooldownDate = new Date();
-      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10); // Set cooldown to 10 minutes
+      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10);
 
       failedCompanies[company] = {
         timestamp: new Date().toISOString(),
@@ -202,20 +200,20 @@ const OnlineAssessment = () => {
       localStorage.setItem('failedCompanies', JSON.stringify(failedCompanies));
     }
 
-    // Store results correctly
     localStorage.setItem('assessmentScore', percentageScore.toString());
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
     localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
 
-    // Set interview status only if passed
     if (isPassed) {
-      // Here we don't automatically mark interview as complete
-      // We'll let the user proceed to the interview process
       toast({
         title: "Assessment Complete",
         description: `Congratulations! You scored ${percentageScore}%, which meets the ${cutoffScore}% cutoff for ${resumeData.company}.`,
       });
+
+      window.dispatchEvent(new CustomEvent('assessmentComplete', {
+        detail: { score: percentageScore, passed: isPassed }
+      }));
     } else {
       toast({
         title: "Assessment Not Passed",

@@ -69,6 +69,25 @@ const Interview = () => {
     setIsLoading(false);
   }, [navigate, toast]);
 
+  // Add event listener for interview completion
+  useEffect(() => {
+    const handleInterviewComplete = () => {
+      // Mark interview as complete
+      localStorage.setItem('interviewComplete', 'true');
+      
+      // Navigate to results
+      setTimeout(() => {
+        navigate('/results');
+      }, 1000);
+    };
+
+    window.addEventListener('interviewComplete', handleInterviewComplete);
+    
+    return () => {
+      window.removeEventListener('interviewComplete', handleInterviewComplete);
+    };
+  }, [navigate]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-b from-black to-slate-900">

@@ -59,6 +59,7 @@ const ResultsPage = () => {
         variant: "destructive",
       });
       navigate('/interview');
+      return;
     }
   }, [navigate, toast]);
 
