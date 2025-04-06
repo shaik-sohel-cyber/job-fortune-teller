@@ -30,29 +30,6 @@ const ResumeVerification = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Check if verification has already been completed
-    const verificationResults = localStorage.getItem('verificationResults');
-    if (verificationResults) {
-      try {
-        const parsedResults = JSON.parse(verificationResults);
-        // If verification was already done and passed, skip to assessment
-        if (parsedResults.passedVerification) {
-          console.log("Verification already completed successfully");
-          setIsComplete(true);
-          setProgress(100);
-          
-          // Set all items as verified
-          setVerificationItems(prev => 
-            prev.map(item => ({ ...item, status: 'verified' }))
-          );
-          
-          return;
-        }
-      } catch (error) {
-        console.error("Error parsing verification results", error);
-      }
-    }
-    
     const resumeData = localStorage.getItem('resumeData');
     
     if (!resumeData) {
@@ -124,34 +101,17 @@ const ResumeVerification = () => {
   };
   
   const handleContinue = () => {
-    // Count verified items
-    const verifiedCount = verificationItems.filter(item => item.status === 'verified').length;
-    const totalItems = verificationItems.length;
-    
-    // Determine if verification passed (need at least 3 verified items)
-    const passedVerification = verifiedCount >= 3;
-    
     // Store verification results
     const verificationResults = {
-      verifiedItems: verifiedCount,
-      totalItems: totalItems,
-      passedVerification: passedVerification,
+      verifiedItems: verificationItems.filter(item => item.status === 'verified').length,
+      totalItems: verificationItems.length,
+      passedVerification: verificationItems.filter(item => item.status === 'verified').length >= 3,
       timestamp: new Date().toISOString(),
     };
     
-    // Store results in localStorage
     localStorage.setItem('verificationResults', JSON.stringify(verificationResults));
     
-    if (!passedVerification) {
-      toast({
-        title: "Verification Failed",
-        description: "Not enough items were successfully verified. You need at least 3 verified items to proceed.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // If passed, navigate to assessment
+    // Navigate to assessment
     navigate('/assessment');
   };
   

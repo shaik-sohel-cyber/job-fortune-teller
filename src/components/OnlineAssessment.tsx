@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,6 @@ import { ArrowRight, Clock, CheckCircle2, AlertTriangle, BookOpen } from "lucide
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Question, getRelevantQuestions } from "@/utils/questionBank";
-
-interface OnlineAssessmentProps {
-  onAssessmentStart?: () => void;
-}
 
 const getCompanyCutoffScore = (company: string, jobTitle: string, packageType: string): number => {
   const companyScores: { [key: string]: number } = {
@@ -34,7 +31,7 @@ const getCompanyCutoffScore = (company: string, jobTitle: string, packageType: s
   return baseScore;
 };
 
-const OnlineAssessment = ({ onAssessmentStart }: OnlineAssessmentProps) => {
+const OnlineAssessment = () => {
   const [technicalQuestions, setTechnicalQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -131,11 +128,6 @@ const OnlineAssessment = ({ onAssessmentStart }: OnlineAssessmentProps) => {
   };
 
   const handleNextQuestion = () => {
-    // Notify parent component that assessment has started (on first question)
-    if (currentQuestion === 0 && onAssessmentStart) {
-      onAssessmentStart();
-    }
-    
     setAnsweredQuestions([...answeredQuestions, currentQuestion]);
 
     if (selectedOption === technicalQuestions[currentQuestion].correctAnswer) {

@@ -1,21 +1,36 @@
+
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Upload, Check, FileText, X, File, AlertTriangle, FileUp, FileSymlink, Loader2 } from "lucide-react";
+import { ArrowRight, Upload, Check, FileText, X, File, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface UploadedFile {
   name: string;
   size: number;
   type: string;
-  content?: string | ArrayBuffer | null;
 }
 
-interface ResumeUploadProps {
-  onResumeUploaded?: (data: any) => void;
+// Mock resume parsing result
+interface ResumeData {
+  name: string;
+  email: string;
+  phone: string;
+  skills: string[];
+  education: {
+    degree: string;
+    institution: string;
+    year: string;
+  }[];
+  experience: {
+    role: string;
+    company: string;
+    duration: string;
+    description: string;
+  }[];
 }
 
 const JOB_TITLE_SUGGESTIONS = [
@@ -51,13 +66,14 @@ const COMPANY_SUGGESTIONS = [
   "LinkedIn"
 ];
 
-const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
+const ResumeUpload = () => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showResumePreview, setShowResumePreview] = useState(false);
+  const [showResumeReview, setShowResumeReview] = useState(false);
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [resumeError, setResumeError] = useState<string | null>(null);
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,27 +86,6 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
   
   const jobTitleRef = useRef<HTMLDivElement>(null);
   const companyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const storedData = localStorage.getItem('resumeData');
-    if (storedData) {
-      try {
-        const parsedData = JSON.parse(storedData);
-        setJobTitle(parsedData.jobTitle || "");
-        setCompany(parsedData.company || "");
-        if (parsedData.fileName) {
-          setUploadedFile({
-            name: parsedData.fileName,
-            size: 0,
-            type: "",
-            content: parsedData.fileContent
-          });
-        }
-      } catch (error) {
-        console.error("Error parsing stored resume data", error);
-      }
-    }
-  }, []);
 
   const filterJobTitleSuggestions = (input: string) => {
     const filtered = JOB_TITLE_SUGGESTIONS.filter(item => 
@@ -175,24 +170,16 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
     }
   };
 
+  // Function to check if file is a valid resume
   const isResumeFile = (file: File): boolean => {
-    const validTypes = [
-      'application/pdf', 
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-      'application/msword',
-      'application/vnd.oasis.opendocument.text'
-    ];
-    
-    const fileName = file.name.toLowerCase();
-    const validExtensions = ['.pdf', '.docx', '.doc', '.txt', '.odt'];
-    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
-    
-    if (!validTypes.includes(file.type) && !hasValidExtension) {
+    // Check for valid file types
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!validTypes.includes(file.type)) {
       return false;
     }
 
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
       return false;
     }
@@ -200,49 +187,59 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
     return true;
   };
 
-  const extractTextFromFile = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      const fileName = file.name.toLowerCase();
-      
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          if (typeof event.target.result === 'string') {
-            resolve(event.target.result);
-          } else {
-            const uint8Array = new Uint8Array(event.target.result as ArrayBuffer);
-            let binary = '';
-            for (let i = 0; i < uint8Array.length; i++) {
-              binary += String.fromCharCode(uint8Array[i]);
+  // Parse resume content (simulated function)
+  const parseResumeContent = (file: File): Promise<ResumeData | null> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // In a real implementation, this would use a resume parsing API or library
+        // For now, we'll create some mock data based on the file name
+        
+        // Simulated resume parsing (in a real app, this would use actual file content)
+        const firstName = file.name.split('.')[0].split('_')[0] || 'John';
+        const lastName = file.name.split('.')[0].split('_')[1] || 'Doe';
+        const fullName = `${firstName} ${lastName}`;
+        
+        // Generate random skills based on the job title
+        const allSkills = [
+          "JavaScript", "TypeScript", "React", "Angular", "Vue", "Node.js", 
+          "Python", "Java", "C#", "PHP", "Ruby", "Go", "SQL", "MongoDB",
+          "AWS", "Docker", "Kubernetes", "CI/CD", "Git", "Agile", "Scrum"
+        ];
+        
+        // Shuffle array to get random skills
+        const shuffled = [...allSkills].sort(() => 0.5 - Math.random());
+        const randomSkills = shuffled.slice(0, 5 + Math.floor(Math.random() * 5));
+        
+        const parsedData: ResumeData = {
+          name: fullName,
+          email: `${firstName.toLowerCase()}${lastName.toLowerCase()}@example.com`,
+          phone: `+1 ${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`,
+          skills: randomSkills,
+          education: [
+            {
+              degree: "Bachelor of Science in Computer Science",
+              institution: "University of Technology",
+              year: `${2010 + Math.floor(Math.random() * 10)}`
             }
-            
-            if (fileName.endsWith('.pdf')) {
-              resolve(`[PDF Content from ${file.name}]\n\nThis is the raw binary content of your PDF. In a production environment, we would use a PDF parsing library.`);
-            } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
-              resolve(`[DOCX/DOC Content from ${file.name}]\n\nThis is the raw binary content of your document. In a production environment, we would use a document parsing library.`);
-            } else {
-              try {
-                const text = decodeURIComponent(escape(binary));
-                resolve(text);
-              } catch (e) {
-                resolve(binary);
-              }
+          ],
+          experience: [
+            {
+              role: "Software Developer",
+              company: "Tech Solutions Inc.",
+              duration: "2018-2021",
+              description: "Developed and maintained web applications using modern JavaScript frameworks."
+            },
+            {
+              role: "Junior Developer",
+              company: "Digital Innovations",
+              duration: "2016-2018",
+              description: "Worked on frontend development and responsive design implementations."
             }
-          }
-        } else {
-          reject(new Error('Failed to read file content'));
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Error reading file'));
-      };
-      
-      if (file.type === 'text/plain' || fileName.endsWith('.txt')) {
-        reader.readAsText(file);
-      } else {
-        reader.readAsArrayBuffer(file);
-      }
+          ]
+        };
+        
+        resolve(parsedData);
+      }, 1500); // Simulate parsing delay
     });
   };
 
@@ -250,10 +247,10 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
     setResumeError(null);
     
     if (!isResumeFile(file)) {
-      setResumeError("Invalid file format. Please upload a PDF, DOCX, or text resume file (max 10MB).");
+      setResumeError("Invalid file format. Please upload a PDF or DOCX resume file (max 5MB).");
       toast({
         title: "Invalid file format",
-        description: "Please upload a PDF, DOCX, or text resume file (max 10MB).",
+        description: "Please upload a PDF or DOCX resume file (max 5MB).",
         variant: "destructive",
       });
       return;
@@ -267,27 +264,28 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
 
     toast({
       title: "File uploaded successfully",
-      description: `${file.name} has been uploaded. Click 'View Resume' to preview.`,
+      description: `${file.name} has been uploaded. Analyzing content...`,
     });
     
     setIsLoading(true);
     
     try {
-      const fileContent = await extractTextFromFile(file);
-      
-      setUploadedFile(prev => prev ? {...prev, content: fileContent} : null);
+      // Parse resume content
+      const parsed = await parseResumeContent(file);
+      setResumeData(parsed);
       setIsLoading(false);
+      setShowResumeReview(true);
       
       toast({
-        title: "Resume ready",
-        description: "You can now preview your resume or continue to the next step.",
+        title: "Resume analyzed",
+        description: "Please review the extracted information for accuracy.",
       });
     } catch (error) {
       setIsLoading(false);
-      setResumeError("Failed to read resume content. Please try a different file.");
+      setResumeError("Failed to analyze resume content. Please try a different file.");
       toast({
-        title: "Resume reading failed",
-        description: "Could not read the uploaded file.",
+        title: "Resume analysis failed",
+        description: "Could not extract information from the uploaded file.",
         variant: "destructive",
       });
     }
@@ -301,7 +299,8 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
 
   const removeFile = () => {
     setUploadedFile(null);
-    setShowResumePreview(false);
+    setResumeData(null);
+    setShowResumeReview(false);
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -313,8 +312,8 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
     else return (bytes / 1048576).toFixed(1) + " MB";
   };
 
-  const toggleResumePreview = () => {
-    setShowResumePreview(!showResumePreview);
+  const confirmResumeData = () => {
+    setShowResumeReview(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -347,26 +346,19 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
         fileName: uploadedFile.name,
         jobTitle,
         company,
-        fileContent: uploadedFile.content,
-        uploadTime: new Date().toISOString()
+        candidateInfo: resumeData
       };
       
       localStorage.setItem('resumeData', JSON.stringify(resumeDataToStore));
-      
-      if (onResumeUploaded) {
-        onResumeUploaded(resumeDataToStore);
-      }
-      
-      const event = new CustomEvent('resumeUploaded', { detail: resumeDataToStore });
-      window.dispatchEvent(event);
+      localStorage.setItem('userEmail', resumeData?.email || '');
       
       toast({
         title: "Resume processed successfully",
-        description: "Your resume has been processed. You can now proceed to verification.",
+        description: "Proceeding to resume verification.",
       });
       
       navigate('/verification');
-    }, 800);
+    }, 2000);
   };
 
   return (
@@ -386,42 +378,92 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
         </div>
 
         <AnimatePresence mode="wait">
-          {showResumePreview && uploadedFile && uploadedFile.content ? (
+          {showResumeReview && resumeData ? (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-white rounded-xl p-6 border border-slate-200 text-slate-900 shadow-lg"
+              className="bg-slate-800 rounded-xl p-6 border border-slate-700 text-white shadow-lg"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Resume Preview</h3>
+                <h3 className="text-xl font-semibold">Resume Information Review</h3>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={toggleResumePreview}
-                  className="text-slate-800 hover:bg-slate-100"
+                  onClick={() => setShowResumeReview(false)}
+                  className="text-white hover:bg-slate-700"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               
-              <div className="max-h-96 overflow-auto bg-slate-50 p-4 rounded border border-slate-200 font-mono text-sm whitespace-pre-wrap">
-                {typeof uploadedFile.content === 'string' ? uploadedFile.content : 'Unable to display content'}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-slate-400">Personal Information</h4>
+                  <p className="text-lg font-medium mt-1">{resumeData.name}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="text-sm text-slate-300">
+                      <span className="text-slate-400">Email:</span> {resumeData.email}
+                    </div>
+                    <div className="text-sm text-slate-300">
+                      <span className="text-slate-400">Phone:</span> {resumeData.phone}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-slate-400">Skills</h4>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {resumeData.skills.map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-slate-700 text-white px-2 py-1 rounded text-xs"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-slate-400">Education</h4>
+                  <div className="space-y-2 mt-2">
+                    {resumeData.education.map((edu, index) => (
+                      <div key={index} className="bg-slate-700/50 p-2 rounded">
+                        <p className="font-medium">{edu.degree}</p>
+                        <p className="text-sm text-slate-300">{edu.institution}, {edu.year}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-slate-400">Experience</h4>
+                  <div className="space-y-2 mt-2">
+                    {resumeData.experience.map((exp, index) => (
+                      <div key={index} className="bg-slate-700/50 p-2 rounded">
+                        <p className="font-medium">{exp.role}</p>
+                        <p className="text-sm text-slate-300">{exp.company}, {exp.duration}</p>
+                        <p className="text-xs text-slate-400 mt-1">{exp.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
               
               <div className="flex justify-end mt-6">
                 <Button 
                   variant="outline" 
-                  className="mr-2 border-slate-300 hover:bg-slate-100"
+                  className="mr-2 text-white border-slate-600 hover:bg-slate-700"
                   onClick={removeFile}
                 >
                   Upload Different Resume
                 </Button>
                 <Button 
-                  onClick={toggleResumePreview}
+                  onClick={confirmResumeData}
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
-                  Confirm Resume
+                  Confirm Information
                 </Button>
               </div>
             </motion.div>
@@ -525,7 +567,7 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
                     type="file"
                     className="hidden"
                     onChange={handleChange}
-                    accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   />
 
                   <AnimatePresence mode="wait">
@@ -538,13 +580,13 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
                         className="flex flex-col items-center justify-center text-center"
                       >
                         <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-                          <FileUp className="h-8 w-8 text-primary" />
+                          <Upload className="h-8 w-8 text-primary" />
                         </div>
                         <h3 className="font-semibold text-lg mb-2">
                           Drag and drop your resume here
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                          Supports PDF, DOCX, DOC, TXT (Max 10MB)
+                          Supports PDF, DOCX (Max 5MB)
                         </p>
                         <Button
                           type="button"
@@ -591,29 +633,16 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
                           <p className="text-sm text-gray-700">
                             {formatFileSize(uploadedFile.size)}
                           </p>
-                          
                           {isLoading ? (
                             <div className="flex items-center mt-2 text-blue-600 text-sm">
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Processing resume...
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                              Analyzing resume content...
                             </div>
                           ) : (
                             <div className="flex items-center mt-2 text-green-600 text-sm">
                               <Check className="h-4 w-4 mr-1" />
                               File uploaded successfully
                             </div>
-                          )}
-                          
-                          {uploadedFile && !isLoading && (
-                            <Button
-                              type="button"
-                              variant="link"
-                              onClick={toggleResumePreview}
-                              className="mt-2 p-0 h-auto text-blue-600 hover:text-blue-800"
-                            >
-                              <FileSymlink className="h-3 w-3 mr-1" />
-                              View Resume
-                            </Button>
                           )}
                         </div>
                       </motion.div>
@@ -632,12 +661,12 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
         >
           {isLoading ? (
             <div className="flex items-center">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
               Processing...
             </div>
           ) : (
             <div className="flex items-center">
-              Continue <ArrowRight className="ml-2" />
+              Continue to Interview <ArrowRight className="ml-2" />
             </div>
           )}
         </Button>
