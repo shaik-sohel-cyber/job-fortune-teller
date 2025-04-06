@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +16,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,24 +25,18 @@ const Login = () => {
       await login(email, password);
       // The redirect is handled in the login function
     } catch (error) {
-      // Display custom toast if needed, though error handling is done in the login function
-      toast({
-        title: "Login failed",
-        description: "Please check if you've registered already.",
-        variant: "destructive",
-      });
+      // Error handling is done in the login function
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+    <div className="container max-w-md mx-auto px-4 pt-28 pb-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
       >
         <Card className="glass-card">
           <CardHeader className="space-y-1">
