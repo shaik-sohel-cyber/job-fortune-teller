@@ -79,67 +79,12 @@ const AssessmentPage = () => {
     }
   }, [navigate, toast]);
 
-  // Listen for assessment completion
-  useEffect(() => {
-    const handleAssessmentComplete = (event: Event) => {
-      const customEvent = event as CustomEvent<{score: number, passed: boolean}>;
-      const { score, passed } = customEvent.detail;
-      
-      // Store assessment results
-      localStorage.setItem('assessmentScore', score.toString());
-      localStorage.setItem('assessmentPassed', passed.toString());
-      
-      if (passed) {
-        toast({
-          title: "Assessment Passed",
-          description: "Congratulations! You can now proceed to the interview.",
-        });
-        
-        // Automatically redirect to interview page
-        setTimeout(() => {
-          navigate('/interview');
-        }, 1500);
-      } else {
-        // Handle failed assessment
-        toast({
-          title: "Assessment Not Passed",
-          description: "Sorry, you didn't meet the required score. Please try again later.",
-          variant: "destructive",
-        });
-        
-        // Set cooldown period for this company
-        const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
-        const company = resumeData.company || '';
-        
-        if (company) {
-          const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
-          const cooldownUntil = new Date();
-          cooldownUntil.setMinutes(cooldownUntil.getMinutes() + 30); // 30 minute cooldown
-          
-          failedCompanies[company] = {
-            lastAttempt: new Date().toISOString(),
-            cooldownUntil: cooldownUntil.toISOString()
-          };
-          
-          localStorage.setItem('failedCompanies', JSON.stringify(failedCompanies));
-        }
-      }
-    };
-
-    // Add event listener for assessment completion
-    window.addEventListener('assessmentComplete', handleAssessmentComplete);
-    
-    return () => {
-      window.removeEventListener('assessmentComplete', handleAssessmentComplete);
-    };
-  }, [navigate, toast]);
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4 flex flex-col bg-gradient-to-b from-black to-slate-900 text-white"
+      className="min-h-screen pt-20 pb-10 px-4 flex flex-col bg-black"
     >
       {isBlocked && blockedInfo ? (
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">

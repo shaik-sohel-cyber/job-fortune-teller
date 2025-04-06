@@ -1,26 +1,8 @@
 
 import { motion } from "framer-motion";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import ResumeVerification from "@/components/ResumeVerification";
 
 const VerificationPage = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Check if resume is uploaded before verification
-    if (!localStorage.getItem('resumeData')) {
-      toast({
-        title: "Resume not uploaded",
-        description: "Please upload your resume first.",
-        variant: "destructive",
-      });
-      navigate('/upload');
-    }
-  }, [navigate, toast]);
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
