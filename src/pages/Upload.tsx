@@ -5,16 +5,24 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, ArrowRight } from "lucide-react";
+import { Eye, ArrowRight, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Upload = () => {
   const { toast } = useToast();
   const [resumeData, setResumeData] = useState<any>(null);
   const [showResumeContent, setShowResumeContent] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
+    // If user isn't authenticated, they shouldn't be here
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     // Check for existing resume data
     const storedResumeData = localStorage.getItem('resumeData');
     if (storedResumeData) {
@@ -24,7 +32,7 @@ const Upload = () => {
         description: "You can continue with your existing resume or upload a new one.",
       });
     }
-  }, [toast]);
+  }, [toast, isAuthenticated, navigate]);
 
   // Listen for changes to localStorage
   useEffect(() => {
@@ -59,6 +67,13 @@ const Upload = () => {
 
   const handleContinue = () => {
     if (resumeData) {
+      // Clear any previous assessment or interview data to ensure proper sequence
+      localStorage.removeItem('verificationResults');
+      localStorage.removeItem('assessmentScore');
+      localStorage.removeItem('assessmentPassed');
+      localStorage.removeItem('interviewComplete');
+      localStorage.removeItem('interviewResults');
+      
       navigate('/verification');
     } else {
       toast({
@@ -76,6 +91,38 @@ const Upload = () => {
       exit={{ opacity: 0 }}
       className="min-h-screen pt-20 pb-10 px-4 flex flex-col items-center justify-center bg-gradient-to-b from-black to-slate-900 text-white"
     >
+      <div className="w-full max-w-3xl mb-8">
+        <Card className="bg-slate-800/90 border-slate-700">
+          <CardContent className="pt-6">
+            <div className="flex items-center mb-6 text-primary">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-4">
+                <span className="text-xl font-bold">1</span>
+              </div>
+              <h2 className="text-2xl font-bold">Resume Upload</h2>
+            </div>
+            
+            <div className="space-y-1 mb-6">
+              <p className="text-slate-300">Please upload your resume to apply for jobs.</p>
+              <p className="text-sm text-slate-400">Supported formats: PDF, DOCX, DOC, TXT</p>
+            </div>
+            
+            <div className="bg-slate-700/40 p-4 rounded-lg mb-6 flex items-start">
+              <AlertTriangle className="h-5 w-5 text-yellow-500 mr-3 mt-0.5" />
+              <div className="text-sm text-slate-300">
+                <p className="font-medium text-yellow-500 mb-1">Important</p>
+                <p>You must complete each step in order. After uploading your resume, you'll proceed to:</p>
+                <ol className="list-decimal pl-5 space-y-1 mt-2">
+                  <li>Verification of your resume details</li>
+                  <li>Technical assessment specific to your role</li>
+                  <li>Virtual interview process</li>
+                  <li>Results and feedback</li>
+                </ol>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <ResumeUpload onResumeUploaded={(data) => setResumeData(data)} />
       
       {resumeData && (

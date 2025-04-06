@@ -6,10 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import OnlineAssessment from "@/components/OnlineAssessment";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CalendarClock, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AssessmentPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockedInfo, setBlockedInfo] = useState<{
@@ -20,8 +22,28 @@ const AssessmentPage = () => {
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [assessmentPassed, setAssessmentPassed] = useState(false);
   const [isAllowed, setIsAllowed] = useState(false);
+  const [assessmentInProgress, setAssessmentInProgress] = useState(false);
+
+  // Prevent navigation during assessment
+  useEffect(() => {
+    if (assessmentInProgress) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      };
+      
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [assessmentInProgress]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     const checkAccess = () => {
       try {
         // Check if user has completed earlier steps
@@ -45,16 +67,6 @@ const AssessmentPage = () => {
           return false;
         }
 
-        if (!localStorage.getItem('selectedPackage')) {
-          toast({
-            title: "Package not selected",
-            description: "Please select a package first.",
-            variant: "destructive",
-          });
-          navigate('/package-selection');
-          return false;
-        }
-
         return true;
       } catch (error) {
         console.error("Error checking access:", error);
@@ -71,7 +83,9 @@ const AssessmentPage = () => {
     const checkAssessmentStatus = () => {
       try {
         const assessmentPassedLS = localStorage.getItem('assessmentPassed');
-        if (assessmentPassedLS === 'true') {
+        const assessmentScoreLS = localStorage.getItem('assessmentScore');
+        
+        if (assessmentPassedLS === 'true' && assessmentScoreLS) {
           setAssessmentCompleted(true);
           setAssessmentPassed(true);
         }
@@ -122,7 +136,7 @@ const AssessmentPage = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [navigate, toast]);
+  }, [navigate, toast, isAuthenticated]);
 
   // Listen for assessment completion
   useEffect(() => {
@@ -136,6 +150,7 @@ const AssessmentPage = () => {
       
       setAssessmentCompleted(true);
       setAssessmentPassed(passed);
+      setAssessmentInProgress(false);
       
       if (passed) {
         toast({
@@ -178,6 +193,9 @@ const AssessmentPage = () => {
   }, [navigate, toast]);
 
   const handleProceedToInterview = () => {
+    // Clear any previous interview data
+    localStorage.removeItem('interviewComplete');
+    localStorage.removeItem('interviewResults');
     navigate('/interview');
   };
 
@@ -187,6 +205,10 @@ const AssessmentPage = () => {
 
   const handleViewDashboard = () => {
     navigate('/dashboard');
+  };
+  
+  const handleAssessmentStart = () => {
+    setAssessmentInProgress(true);
   };
 
   if (isLoading) {
@@ -335,7 +357,12 @@ const AssessmentPage = () => {
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
           <div className="bg-slate-800 text-white shadow-lg rounded-xl overflow-hidden mb-6">
             <div className="bg-primary p-4 text-white">
-              <h2 className="text-xl font-semibold">Technical Assessment</h2>
+              <div className="flex items-center mb-2">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3">
+                  <span className="text-lg font-bold">2</span>
+                </div>
+                <h2 className="text-xl font-semibold">Technical Assessment</h2>
+              </div>
               <p className="text-sm text-white/80">Complete the assessment to proceed to your interview</p>
             </div>
             <div className="p-4 bg-slate-700/50">
@@ -353,9 +380,14 @@ const AssessmentPage = () => {
                   <span>Time Limit: 10 minutes</span>
                 </div>
               </div>
+              
+              <div className="mt-4 p-3 bg-yellow-900/30 border border-yellow-800/50 rounded-lg">
+                <p className="text-sm text-yellow-300 font-medium">Important: Do not leave this page during the assessment.</p>
+                <p className="text-xs text-slate-300 mt-1">Leaving will interrupt your assessment and you may need to restart.</p>
+              </div>
             </div>
             <div className="flex-1 flex flex-col">
-              <OnlineAssessment />
+              <OnlineAssessment onAssessmentStart={handleAssessmentStart} />
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import Results from "@/components/Results";
 import { Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define types for resume data
 interface Education {
@@ -40,11 +41,17 @@ interface ResumeData {
 const ResultsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     // Validate that the user has completed the entire process in order
     const checkAccess = () => {
       try {
@@ -72,6 +79,16 @@ const ResultsPage = () => {
           toast({
             title: "Assessment not completed",
             description: "Please complete the technical assessment first.",
+            variant: "destructive",
+          });
+          navigate('/assessment');
+          return false;
+        }
+
+        if (localStorage.getItem('assessmentPassed') !== 'true') {
+          toast({
+            title: "Assessment not passed",
+            description: "You need to pass the assessment to proceed.",
             variant: "destructive",
           });
           navigate('/assessment');
@@ -124,7 +141,7 @@ const ResultsPage = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [navigate, toast]);
+  }, [navigate, toast, isAuthenticated]);
 
   if (isLoading) {
     return (
@@ -169,7 +186,12 @@ const ResultsPage = () => {
     >
       <div className="max-w-6xl mx-auto">
         <div className="bg-slate-800/80 backdrop-blur-sm p-4 rounded-lg mb-6">
-          <h1 className="text-2xl font-bold">Your Assessment & Interview Results</h1>
+          <div className="flex items-center mb-4 text-primary">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-4">
+              <span className="text-xl font-bold">4</span>
+            </div>
+            <h1 className="text-2xl font-bold">Your Assessment & Interview Results</h1>
+          </div>
           <p className="text-slate-300">
             Company: {resumeData?.company || 'Tech Company'}
           </p>
