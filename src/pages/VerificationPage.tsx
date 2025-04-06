@@ -14,7 +14,13 @@ const VerificationPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check if user is authenticated
     if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to continue.",
+        variant: "destructive",
+      });
       navigate('/login');
       return;
     }
@@ -28,6 +34,40 @@ const VerificationPage = () => {
       });
       navigate('/upload');
       return;
+    }
+    
+    // Check if user has already completed assessment
+    const assessmentResults = localStorage.getItem('assessmentResults');
+    if (assessmentResults) {
+      try {
+        const parsedResults = JSON.parse(assessmentResults);
+        if (parsedResults.completed) {
+          // User has already completed assessment, check if they passed
+          if (parsedResults.passed) {
+            navigate('/interview');
+          } else {
+            navigate('/assessment');
+          }
+          return;
+        }
+      } catch (error) {
+        console.error("Error parsing assessment results", error);
+      }
+    }
+    
+    // Check if verification is already completed
+    const verificationResults = localStorage.getItem('verificationResults');
+    if (verificationResults) {
+      try {
+        const parsedResults = JSON.parse(verificationResults);
+        if (parsedResults.passedVerification) {
+          // User has already passed verification, move to assessment
+          navigate('/assessment');
+          return;
+        }
+      } catch (error) {
+        console.error("Error parsing verification results", error);
+      }
     }
     
     // Small delay for loading animation
