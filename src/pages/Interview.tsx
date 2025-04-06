@@ -72,13 +72,32 @@ const Interview = () => {
   // Add event listener for interview completion
   useEffect(() => {
     const handleInterviewComplete = () => {
+      // Set a randomized interview score between 60 and 95 for demo purposes
+      const interviewScore = Math.floor(Math.random() * 36) + 60;
+      localStorage.setItem('interviewScore', interviewScore.toString());
+      
+      // Set randomized scores for individual rounds
+      const roundScores = [
+        { round: "technical", score: Math.floor(Math.random() * 31) + 65 },
+        { round: "coding", score: Math.floor(Math.random() * 31) + 65 },
+        { round: "domain", score: Math.floor(Math.random() * 31) + 65 },
+        { round: "hr", score: Math.floor(Math.random() * 31) + 65 },
+      ];
+      localStorage.setItem('roundScores', JSON.stringify(roundScores));
+      
       // Mark interview as complete
       localStorage.setItem('interviewComplete', 'true');
+      
+      // Display toast for completion
+      toast({
+        title: "Interview Complete",
+        description: "Your interview has been completed successfully. Redirecting to results page.",
+      });
       
       // Navigate to results
       setTimeout(() => {
         navigate('/results');
-      }, 1000);
+      }, 1500);
     };
 
     window.addEventListener('interviewComplete', handleInterviewComplete);
@@ -86,7 +105,7 @@ const Interview = () => {
     return () => {
       window.removeEventListener('interviewComplete', handleInterviewComplete);
     };
-  }, [navigate]);
+  }, [navigate, toast]);
 
   if (isLoading) {
     return (
