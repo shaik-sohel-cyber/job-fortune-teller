@@ -177,12 +177,13 @@ const OnlineAssessment = () => {
       return total + (q.difficulty === "easy" ? 1 : q.difficulty === "medium" ? 2 : 3);
     }, 0);
 
+    // Ensure we're calculating percentage correctly
     const percentageScore = Math.round((score / maxPossibleScore) * 100);
     const isPassed = percentageScore >= cutoffScore;
 
     if (!isPassed) {
       setSuggestedTopics(generateImprovementTopics());
-      setFailureRedirectTimer(10); // Changed to 10 minutes (600 seconds)
+      setFailureRedirectTimer(10); // 10 seconds for redirect timer
 
       const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
       const company = resumeData.company;
@@ -201,21 +202,20 @@ const OnlineAssessment = () => {
       localStorage.setItem('failedCompanies', JSON.stringify(failedCompanies));
     }
 
+    // Store results correctly
     localStorage.setItem('assessmentScore', percentageScore.toString());
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
     localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
-    localStorage.setItem('interviewComplete', 'true'); // Mark the interview as complete
 
+    // Set interview status only if passed
     if (isPassed) {
+      // Here we don't automatically mark interview as complete
+      // We'll let the user proceed to the interview process
       toast({
         title: "Assessment Complete",
         description: `Congratulations! You scored ${percentageScore}%, which meets the ${cutoffScore}% cutoff for ${resumeData.company}.`,
       });
-      // Navigate to results page
-      setTimeout(() => {
-        navigate('/results');
-      }, 1500);
     } else {
       toast({
         title: "Assessment Not Passed",
@@ -441,8 +441,8 @@ const OnlineAssessment = () => {
                       </ul>
                     </div>
                     
-                    <Button onClick={continueToResults} className="button-glow w-full">
-                      View Detailed Results <ArrowRight className="ml-2 h-5 w-5" />
+                    <Button onClick={continueToInterview} className="button-glow w-full">
+                      Proceed to Interview <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </>
                 );

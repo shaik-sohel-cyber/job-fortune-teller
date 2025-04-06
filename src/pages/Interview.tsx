@@ -36,16 +36,6 @@ const Interview = () => {
         return false;
       }
 
-      if (!localStorage.getItem('selectedPackage')) {
-        toast({
-          title: "Package not selected",
-          description: "Please select a package first.",
-          variant: "destructive",
-        });
-        navigate('/package-selection');
-        return false;
-      }
-
       // Check if assessment was completed and passed
       const assessmentPassed = localStorage.getItem('assessmentPassed');
       const assessmentScore = localStorage.getItem('assessmentScore');

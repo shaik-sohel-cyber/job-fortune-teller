@@ -41,6 +41,17 @@ const ResultsPage = () => {
       return;
     }
 
+    // Check if assessment was passed
+    if (localStorage.getItem('assessmentPassed') !== "true") {
+      toast({
+        title: "Assessment not passed",
+        description: "You need to pass the assessment to view results.",
+        variant: "destructive",
+      });
+      navigate('/assessment');
+      return;
+    }
+
     if (!localStorage.getItem('interviewComplete')) {
       toast({
         title: "Interview not completed",
