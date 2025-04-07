@@ -1,8 +1,23 @@
 
 import { motion } from "framer-motion";
 import ResumeUpload from "@/components/ResumeUpload";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Upload = () => {
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // If user already has a resume, show toast but let them continue
+    // (they might want to update their resume)
+    if (localStorage.getItem('resumeData')) {
+      toast({
+        title: "Resume already uploaded",
+        description: "You can continue with your existing resume or upload a new one.",
+      });
+    }
+  }, [toast]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
