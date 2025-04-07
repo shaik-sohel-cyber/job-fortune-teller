@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import OnlineAssessment from "@/components/OnlineAssessment";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CalendarClock, CheckCircle, ArrowRight } from "lucide-react";
+import { AlertTriangle, CalendarClock } from "lucide-react";
 
 const AssessmentPage = () => {
   const navigate = useNavigate();
@@ -16,8 +16,6 @@ const AssessmentPage = () => {
     cooldownUntil: string;
     remainingMinutes: number;
   } | null>(null);
-  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
-  const [assessmentPassed, setAssessmentPassed] = useState(false);
 
   useEffect(() => {
     // Check if user has completed earlier steps
@@ -51,13 +49,6 @@ const AssessmentPage = () => {
       return;
     }
 
-    // Check if assessment was already completed and passed
-    const assessmentPassedLS = localStorage.getItem('assessmentPassed');
-    if (assessmentPassedLS === 'true') {
-      setAssessmentCompleted(true);
-      setAssessmentPassed(true);
-    }
-
     // Check if company is in cooldown period
     const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
     const company = resumeData.company || '';
@@ -88,69 +79,12 @@ const AssessmentPage = () => {
     }
   }, [navigate, toast]);
 
-  // Listen for assessment completion
-  useEffect(() => {
-    const handleAssessmentComplete = (event: Event) => {
-      const customEvent = event as CustomEvent<{score: number, passed: boolean}>;
-      const { score, passed } = customEvent.detail;
-      
-      // Store assessment results
-      localStorage.setItem('assessmentScore', score.toString());
-      localStorage.setItem('assessmentPassed', passed.toString());
-      
-      setAssessmentCompleted(true);
-      setAssessmentPassed(passed);
-      
-      if (passed) {
-        toast({
-          title: "Assessment Passed",
-          description: "Congratulations! You can now proceed to the interview.",
-        });
-      } else {
-        // Handle failed assessment
-        toast({
-          title: "Assessment Not Passed",
-          description: "Sorry, you didn't meet the required score. Please try again later.",
-          variant: "destructive",
-        });
-        
-        // Set cooldown period for this company
-        const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
-        const company = resumeData.company || '';
-        
-        if (company) {
-          const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
-          const cooldownUntil = new Date();
-          cooldownUntil.setMinutes(cooldownUntil.getMinutes() + 30); // 30 minute cooldown
-          
-          failedCompanies[company] = {
-            lastAttempt: new Date().toISOString(),
-            cooldownUntil: cooldownUntil.toISOString()
-          };
-          
-          localStorage.setItem('failedCompanies', JSON.stringify(failedCompanies));
-        }
-      }
-    };
-
-    // Add event listener for assessment completion
-    window.addEventListener('assessmentComplete', handleAssessmentComplete);
-    
-    return () => {
-      window.removeEventListener('assessmentComplete', handleAssessmentComplete);
-    };
-  }, [navigate, toast]);
-
-  const handleProceedToInterview = () => {
-    navigate('/interview');
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4 flex flex-col bg-gradient-to-b from-black to-slate-900 text-white"
+      className="min-h-screen pt-20 pb-10 px-4 flex flex-col bg-black"
     >
       {isBlocked && blockedInfo ? (
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
@@ -207,56 +141,6 @@ const AssessmentPage = () => {
                 Try Different Company
               </Button>
             </div>
-          </motion.div>
-        </div>
-      ) : assessmentCompleted && assessmentPassed ? (
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-slate-800 text-white shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
-          >
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-              <CheckCircle className="h-10 w-10 text-green-600" />
-            </div>
-            
-            <h2 className="text-2xl font-bold mb-2">Assessment Completed Successfully!</h2>
-            
-            <div className="w-full max-w-md bg-green-900/30 border border-green-800 rounded-lg p-4 my-6 text-center">
-              <p className="text-white">
-                Congratulations! You've passed the assessment for <span className="font-semibold">
-                  {JSON.parse(localStorage.getItem('resumeData') || '{}').company || 'this company'}
-                </span>.
-              </p>
-              
-              <div className="flex items-center justify-center gap-2 my-4">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="font-medium text-green-400">
-                  Score: {localStorage.getItem('assessmentScore') || '0'}%
-                </span>
-              </div>
-              
-              <p className="text-sm text-slate-300">
-                You are now eligible to proceed to the interview round
-              </p>
-            </div>
-            
-            <div className="bg-slate-700 p-4 rounded-lg mb-6 text-left w-full max-w-md">
-              <h4 className="font-medium mb-2">What happens next?</h4>
-              <ul className="space-y-2 text-sm pl-2 text-slate-300">
-                <li>• You'll participate in a multi-round interview process</li>
-                <li>• The interview includes technical, coding, domain-specific, and HR rounds</li>
-                <li>• Prepare to answer questions relevant to your job role</li>
-                <li>• Your performance will be evaluated against company requirements</li>
-              </ul>
-            </div>
-            
-            <Button 
-              onClick={handleProceedToInterview} 
-              className="button-glow"
-            >
-              Proceed to Interview <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
           </motion.div>
         </div>
       ) : (
