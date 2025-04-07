@@ -7,6 +7,10 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Question, getRelevantQuestions } from "@/utils/questionBank";
 
+interface OnlineAssessmentProps {
+  onAssessmentStart?: () => void;
+}
+
 const getCompanyCutoffScore = (company: string, jobTitle: string, packageType: string): number => {
   const companyScores: { [key: string]: number } = {
     "Tech Company": 75,
@@ -30,7 +34,7 @@ const getCompanyCutoffScore = (company: string, jobTitle: string, packageType: s
   return baseScore;
 };
 
-const OnlineAssessment = () => {
+const OnlineAssessment = ({ onAssessmentStart }: OnlineAssessmentProps) => {
   const [technicalQuestions, setTechnicalQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -127,6 +131,11 @@ const OnlineAssessment = () => {
   };
 
   const handleNextQuestion = () => {
+    // Notify parent component that assessment has started (on first question)
+    if (currentQuestion === 0 && onAssessmentStart) {
+      onAssessmentStart();
+    }
+    
     setAnsweredQuestions([...answeredQuestions, currentQuestion]);
 
     if (selectedOption === technicalQuestions[currentQuestion].correctAnswer) {
@@ -181,13 +190,13 @@ const OnlineAssessment = () => {
 
     if (!isPassed) {
       setSuggestedTopics(generateImprovementTopics());
-      setFailureRedirectTimer(10);
+      setFailureRedirectTimer(10); // Changed to 10 minutes (600 seconds)
 
       const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
       const company = resumeData.company;
 
       const cooldownDate = new Date();
-      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10);
+      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10); // Set cooldown to 10 minutes
 
       failedCompanies[company] = {
         timestamp: new Date().toISOString(),
@@ -204,16 +213,17 @@ const OnlineAssessment = () => {
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
     localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
+    localStorage.setItem('interviewComplete', 'true'); // Mark the interview as complete
 
     if (isPassed) {
       toast({
         title: "Assessment Complete",
         description: `Congratulations! You scored ${percentageScore}%, which meets the ${cutoffScore}% cutoff for ${resumeData.company}.`,
       });
-
-      window.dispatchEvent(new CustomEvent('assessmentComplete', {
-        detail: { score: percentageScore, passed: isPassed }
-      }));
+      // Navigate to results page
+      setTimeout(() => {
+        navigate('/results');
+      }, 1500);
     } else {
       toast({
         title: "Assessment Not Passed",
@@ -439,8 +449,8 @@ const OnlineAssessment = () => {
                       </ul>
                     </div>
                     
-                    <Button onClick={continueToInterview} className="button-glow w-full">
-                      Proceed to Interview <ArrowRight className="ml-2 h-5 w-5" />
+                    <Button onClick={continueToResults} className="button-glow w-full">
+                      View Detailed Results <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </>
                 );
