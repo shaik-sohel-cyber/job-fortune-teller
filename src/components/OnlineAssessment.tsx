@@ -204,18 +204,6 @@ const OnlineAssessment = () => {
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
     localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
-    
-    localStorage.setItem('interviewScore', '0');
-    
-    if (isPassed) {
-      const defaultRoundScores = [
-        { round: "technical", score: 0 },
-        { round: "coding", score: 0 },
-        { round: "domain", score: 0 },
-        { round: "hr", score: 0 },
-      ];
-      localStorage.setItem('roundScores', JSON.stringify(defaultRoundScores));
-    }
 
     if (isPassed) {
       toast({
