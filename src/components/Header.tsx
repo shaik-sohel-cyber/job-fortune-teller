@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogIn, UserPlus, LogOut, User } from "lucide-react";
+import { LogIn, UserPlus, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import MainNavigation from "@/components/MainNavigation";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -20,8 +21,6 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const isActive = (path: string) => location.pathname === path;
 
   return (
     <motion.header 
@@ -42,26 +41,8 @@ const Header = () => {
           <span className="text-gradient cursor-pointer">Job Fortune</span>
         </motion.div>
         
-        <nav className="hidden md:flex items-center space-x-8">
-          {[
-            { path: "/", label: "Home" },
-            { path: "/upload", label: "Upload Resume" },
-            { path: "/interview", label: "Interview" },
-            { path: "/about", label: "About Us" },
-            { path: "/contact", label: "Contact" },
-          ].map((item) => (
-            <div key={item.path} className="relative">
-              <Button
-                variant="ghost"
-                className={`text-base font-medium ${isActive(item.path) ? "text-accent" : "text-foreground"}`}
-                onClick={() => navigate(item.path)}
-                data-active={isActive(item.path)}
-              >
-                {item.label}
-              </Button>
-            </div>
-          ))}
-        </nav>
+        {/* Use our new MainNavigation component */}
+        <MainNavigation />
         
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
