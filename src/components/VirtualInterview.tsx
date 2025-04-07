@@ -1,10 +1,13 @@
+
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, MicOff, Send, User, ArrowRight, Clock } from "lucide-react";
+import { Mic, MicOff, Send, User, ArrowRight, Clock, Code, BriefcaseBusiness, Laptop, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Message {
   id: string;
@@ -13,143 +16,140 @@ interface Message {
   timestamp: Date;
 }
 
-// Enhanced interview questions based on job role, resume keywords, and package level
-const getInterviewQuestions = (jobTitle: string, packageLevel: string) => {
-  // Common questions for all roles and packages
-  const commonQuestions = [
-    "Tell me about yourself and your background.",
-    "What made you interested in applying for this position?",
-    "Where do you see yourself professionally in 5 years?",
-    "Tell me about a time when you had to learn a new skill quickly for a project.",
-    "How do you handle feedback or criticism?"
-  ];
+// Define interview rounds
+type InterviewRound = {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  completed: boolean;
+  currentQuestionIndex: number;
+  messages: Message[];
+  questions: string[];
+  scores: number[];
+};
 
-  // Package-level specific behavioral questions
-  const packageBehavioralQuestions: {[key: string]: string[]} = {
-    "entry": [
-      "Tell me about a time you faced a challenge in school or early career.",
-      "How do you prioritize your tasks when you have multiple assignments?",
-      "What is your approach to learning new technologies?",
-      "How do you collaborate with others in a team setting?",
-      "Tell me about a project you worked on that you're proud of."
+// Enhanced interview questions based on job role, resume keywords, and package level
+const getInterviewQuestions = (jobTitle: string, packageLevel: string, round: string) => {
+  // Define round-specific questions
+  const roundQuestions: {[key: string]: string[]} = {
+    "technical": [
+      "Tell me about your technical background and the technologies you're most comfortable with.",
+      "What was the most challenging technical problem you've solved and how did you approach it?",
+      "How do you stay updated with the latest technologies and trends in your field?",
+      "Describe your approach to debugging a complex issue in production.",
+      "How would you explain a complex technical concept to a non-technical stakeholder?",
+      "What's your approach to technical documentation?",
+      "Describe your experience with version control systems like Git.",
+      "How do you ensure the code you write is maintainable and scalable?"
     ],
-    "mid": [
-      "Describe a situation where you had to resolve a conflict within your team.",
-      "Tell me about a time you had to meet a tight deadline. How did you manage it?",
-      "How have you handled a situation where requirements changed mid-project?",
-      "Tell me about a time you had to take initiative without being asked.",
-      "Describe how you've mentored junior team members."
+    "coding": [
+      "Write a function that checks if a string is a palindrome.",
+      "How would you implement a function to find the nth Fibonacci number?",
+      "Write a function to reverse a linked list.",
+      "Explain how you would design a system for a real-time chat application.",
+      "How would you optimize a slow database query?",
+      "Describe your approach to implementing a caching system.",
+      "Write a function that finds duplicate values in an array.",
+      "How would you handle race conditions in a distributed system?"
     ],
-    "senior": [
-      "Tell me about a strategic decision you made that impacted your team or organization.",
-      "How have you influenced technical decisions in your previous roles?",
-      "Describe a situation where you had to navigate organizational politics to achieve a goal.",
-      "Tell me about a time you had to manage up to get buy-in for an important initiative.",
-      "How have you built and led high-performing teams?"
+    "domain": [
+      `Based on your experience with ${jobTitle}, what domain-specific challenges have you faced?`,
+      "How have you applied your domain knowledge to solve business problems?",
+      "Describe a situation where your industry expertise was crucial for a project's success.",
+      "How do you keep up with industry-specific trends and developments?",
+      "What domain-specific tools or methodologies have you used in your previous roles?",
+      "How would you explain a domain-specific concept to a new team member?",
+      "What industry standards or best practices do you follow in your work?",
+      "How have you bridged the gap between business requirements and technical implementation?"
+    ],
+    "hr": [
+      "What motivates you in your professional life?",
+      "Describe a situation where you had to work with a difficult team member.",
+      "How do you handle feedback, both positive and constructive?",
+      "Where do you see yourself professionally in 5 years?",
+      "Why are you interested in joining our company specifically?",
+      "Tell me about a time when you demonstrated leadership skills.",
+      "How do you maintain a work-life balance?",
+      "What are your salary expectations for this role?"
     ]
   };
-
-  // Technical questions based on job title and package level
-  const technicalQuestions: {[key: string]: {[key: string]: string[]}} = {
-    "Software Engineer": {
-      "entry": [
-        "What programming languages are you most comfortable with?",
-        "Can you describe your approach to debugging code?",
-        "What do you understand about version control systems?",
-        "Explain the difference between arrays and linked lists."
+  
+  // Get role-specific questions for the coding round
+  if (round === "coding") {
+    const roleSpecificCoding: {[key: string]: string[]} = {
+      "Frontend Developer": [
+        "Write a function that throttles event handlers (e.g., for scroll events).",
+        "How would you implement a responsive image gallery with lazy loading?",
+        "Write a function to deep clone a JavaScript object.",
+        "How would you implement a custom hook in React for handling form state?",
+        "Describe how you would optimize the performance of a React application."
       ],
-      "mid": [
-        "How do you ensure your code is maintainable and scalable?",
-        "Describe your experience with microservices architecture.",
-        "How do you approach optimizing application performance?",
-        "What design patterns have you used in your projects?"
+      "Backend Developer": [
+        "Write a function that implements pagination for a large dataset.",
+        "How would you design a rate limiting middleware?",
+        "Write a function to traverse a tree structure recursively.",
+        "Describe how you would handle database migrations in a production environment.",
+        "How would you implement a job queue system?"
       ],
-      "senior": [
-        "How do you make architectural decisions when designing a new system?",
-        "Describe your approach to implementing security best practices in application development.",
-        "How do you guide technology choices in a rapid-growth environment?",
-        "Explain how you would design a system to handle millions of concurrent users."
+      "Data Scientist": [
+        "Write a function to normalize a dataset.",
+        "How would you handle missing values in a dataset?",
+        "Write code to perform a basic statistical analysis on a dataset.",
+        "Describe how you would implement a simple recommendation system.",
+        "How would you evaluate the performance of a machine learning model?"
+      ],
+      "DevOps Engineer": [
+        "Write a shell script to automate deployment.",
+        "How would you implement continuous integration for a microservices architecture?",
+        "Write code to monitor system resources.",
+        "Describe how you would set up infrastructure as code.",
+        "How would you implement a blue-green deployment strategy?"
       ]
-    },
-    "Frontend Developer": {
-      "entry": [
-        "What frameworks and libraries have you worked with?",
-        "How do you approach responsive design?",
-        "Explain the concept of the DOM and how JavaScript interacts with it.",
-        "What are CSS preprocessors and have you used any?"
-      ],
-      "mid": [
-        "How do you manage state in complex frontend applications?",
-        "Describe your experience with performance optimization for web applications.",
-        "How do you approach testing frontend code?",
-        "Explain your strategies for ensuring accessibility in your applications."
-      ],
-      "senior": [
-        "How do you architect large-scale frontend applications?",
-        "Describe your approach to creating and maintaining component libraries.",
-        "How do you stay current with rapidly evolving frontend technologies?",
-        "What strategies do you use for client-side performance monitoring and improvement?"
-      ]
-    },
-    "Data Scientist": {
-      "entry": [
-        "What statistical methods are you familiar with?",
-        "Describe your experience with Python or R for data analysis.",
-        "How do you approach data cleaning and preprocessing?",
-        "What visualization tools have you used?"
-      ],
-      "mid": [
-        "Explain how you would handle a dataset with missing values.",
-        "What machine learning algorithms have you implemented in real projects?",
-        "How do you evaluate the performance of your models?",
-        "Describe your experience with feature engineering."
-      ],
-      "senior": [
-        "How do you design an end-to-end machine learning pipeline?",
-        "Describe how you've deployed models to production environments.",
-        "How do you approach model monitoring and maintenance over time?",
-        "Tell me about a complex data science problem you solved that had significant business impact."
-      ]
-    },
-    "Product Manager": {
-      "entry": [
-        "How do you gather and prioritize user requirements?",
-        "What tools do you use for project tracking?",
-        "How do you communicate product features to different stakeholders?",
-        "Describe your approach to user research."
-      ],
-      "mid": [
-        "How do you balance technical constraints with business goals?",
-        "Describe how you've made data-driven product decisions.",
-        "How do you collaborate with engineering teams on implementation?",
-        "Tell me about a product launch you managed. What went well and what would you improve?"
-      ],
-      "senior": [
-        "How do you develop product strategy that aligns with company objectives?",
-        "Describe how you've built and managed product roadmaps for multiple product lines.",
-        "How do you measure product success beyond traditional metrics?",
-        "Tell me about a product pivot you led. What was the rationale and what were the outcomes?"
-      ]
+    };
+    
+    // Find the closest matching role
+    const roleKey = Object.keys(roleSpecificCoding).find(key => 
+      jobTitle.toLowerCase().includes(key.toLowerCase())
+    );
+    
+    if (roleKey && roleSpecificCoding[roleKey]) {
+      // Add role-specific coding questions
+      return [...roundQuestions[round], ...roleSpecificCoding[roleKey]];
     }
-  };
-
-  // Get role-specific questions or default to Software Engineer if role not found
-  const roleKey = Object.keys(technicalQuestions).find(key => 
-    jobTitle.toLowerCase().includes(key.toLowerCase())
-  ) || "Software Engineer";
+  }
   
-  const roleQuestions = technicalQuestions[roleKey][packageLevel] || technicalQuestions[roleKey]["mid"];
-  const behavioralQuestions = packageBehavioralQuestions[packageLevel] || packageBehavioralQuestions["mid"];
+  // Add package-level difficulty
+  if (packageLevel === "senior") {
+    // Add more challenging questions for senior roles
+    const seniorQuestions: {[key: string]: string[]} = {
+      "technical": [
+        "Describe a time when you had to make a critical architectural decision. What factors did you consider?",
+        "How do you approach technical mentoring of junior team members?",
+        "Describe your experience with scaling systems to handle significant growth."
+      ],
+      "coding": [
+        "How would you design a system that needs to process millions of events per second?",
+        "Explain how you would implement a distributed locking mechanism.",
+        "Describe your approach to handling eventual consistency in distributed systems."
+      ],
+      "domain": [
+        "How have you influenced strategic decisions in your domain?",
+        "Describe a situation where you had to balance technical debt against business needs."
+      ],
+      "hr": [
+        "Describe your leadership philosophy.",
+        "How do you approach mentoring and growing team members?",
+        "Tell me about a time when you had to make an unpopular decision."
+      ]
+    };
+    
+    if (seniorQuestions[round]) {
+      return [...roundQuestions[round], ...seniorQuestions[round]];
+    }
+  }
   
-  // Combine and shuffle questions for uniqueness
-  return shuffleArray([
-    ...commonQuestions.slice(0, 2),
-    ...behavioralQuestions.slice(0, 3),
-    ...roleQuestions,
-    ...commonQuestions.slice(2, 4),
-    ...behavioralQuestions.slice(3),
-    commonQuestions[4]
-  ]);
+  return roundQuestions[round] || [];
 };
 
 // Helper function to shuffle array
@@ -163,16 +163,15 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 const VirtualInterview = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [activeRound, setActiveRound] = useState("technical");
+  const [interviewRounds, setInterviewRounds] = useState<InterviewRound[]>([]);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isInterviewComplete, setIsInterviewComplete] = useState(false);
-  const [interviewTimer, setInterviewTimer] = useState(1800); // 30 minutes in seconds
+  const [interviewTimer, setInterviewTimer] = useState(3600); // 60 minutes in seconds
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [interviewQuestions, setInterviewQuestions] = useState<string[]>([]);
-  const [interviewScore, setInterviewScore] = useState<number[]>([]);
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -233,34 +232,81 @@ const VirtualInterview = () => {
       return;
     }
     
-    // Get job-specific interview questions based on package level
-    const questions = getInterviewQuestions(resumeData.jobTitle, selectedPackage);
-    setInterviewQuestions(questions);
+    // Initialize interview rounds
+    const rounds: InterviewRound[] = [
+      {
+        id: "technical",
+        name: "Technical Round",
+        description: "Assessment of technical knowledge and experience",
+        icon: <Laptop className="h-5 w-5" />,
+        completed: false,
+        currentQuestionIndex: 0,
+        messages: [],
+        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "technical")).slice(0, 5),
+        scores: []
+      },
+      {
+        id: "coding",
+        name: "Coding Round",
+        description: "Practical coding skills and problem solving",
+        icon: <Code className="h-5 w-5" />,
+        completed: false,
+        currentQuestionIndex: 0,
+        messages: [],
+        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "coding")).slice(0, 5),
+        scores: []
+      },
+      {
+        id: "domain",
+        name: "Domain Round",
+        description: "Specific knowledge in your area of expertise",
+        icon: <BriefcaseBusiness className="h-5 w-5" />,
+        completed: false,
+        currentQuestionIndex: 0,
+        messages: [],
+        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "domain")).slice(0, 5),
+        scores: []
+      },
+      {
+        id: "hr",
+        name: "HR Round",
+        description: "Cultural fit and soft skills assessment",
+        icon: <GraduationCap className="h-5 w-5" />,
+        completed: false,
+        currentQuestionIndex: 0,
+        messages: [],
+        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "hr")).slice(0, 5),
+        scores: []
+      }
+    ];
     
-    // Initialize interview scores array
-    setInterviewScore(new Array(questions.length).fill(0));
-    
-    // Personalized welcome message with package details
-    const packageNames = {
-      'entry': 'Entry Level',
-      'mid': 'Mid Level',
-      'senior': 'Senior Level'
+    // Personalized welcome messages for each round
+    const welcomeMessages: {[key: string]: string} = {
+      technical: `Welcome to the Technical Round of your interview for the ${resumeData.jobTitle} position at ${resumeData.company}. In this round, we'll assess your technical knowledge and experience. Please answer the questions thoroughly and provide specific examples where possible.`,
+      coding: `Welcome to the Coding Round. Here, we'll evaluate your practical programming skills and problem-solving ability. For coding questions, please explain your approach and thought process along with your solution.`,
+      domain: `Welcome to the Domain Expertise Round. This round focuses on your specific knowledge and experience in ${resumeData.jobTitle.toLowerCase().includes("data") ? "data science and analytics" : resumeData.jobTitle.toLowerCase().includes("front") ? "frontend development" : "software development"}. We want to understand how you've applied your expertise in real-world scenarios.`,
+      hr: `Welcome to the HR Round, the final stage of our interview process. We'll discuss your career goals, cultural fit with our organization, and soft skills. This helps us understand you better as a potential team member at ${resumeData.company}.`
     };
     
-    const packageName = packageNames[selectedPackage as keyof typeof packageNames] || 'Entry Level';
+    // Add welcome messages to each round
+    const updatedRounds = rounds.map(round => {
+      const welcomeMessage: Message = {
+        id: `welcome-${round.id}`,
+        role: "assistant",
+        content: welcomeMessages[round.id],
+        timestamp: new Date()
+      };
+      return {
+        ...round,
+        messages: [welcomeMessage]
+      };
+    });
     
-    const welcomeMessage: Message = {
-      id: "welcome",
-      role: "assistant",
-      content: `Welcome to your virtual interview for the ${resumeData.jobTitle} position at ${resumeData.company}. I'll be asking you a series of questions to evaluate your fit for this ${packageName} role. Based on your resume verification and technical assessment score of ${assessmentScore}%, we're looking forward to learning more about your experience and skills. Please answer thoroughly and provide specific examples when possible.`,
-      timestamp: new Date(),
-    };
+    setInterviewRounds(updatedRounds);
     
-    setMessages([welcomeMessage]);
-    
-    // Send first question after a delay
+    // Send first question after a delay for the first round
     setTimeout(() => {
-      sendNextQuestion();
+      sendNextQuestion("technical");
       setIsTimerRunning(true);
     }, 1500);
   }, []);
@@ -279,7 +325,16 @@ const VirtualInterview = () => {
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, timeoutMessage]);
+      setInterviewRounds(prev => {
+        const updated = [...prev];
+        const currentRound = updated.find(r => r.id === activeRound);
+        if (currentRound) {
+          currentRound.messages = [...currentRound.messages, timeoutMessage];
+          currentRound.completed = true;
+        }
+        return updated;
+      });
+      
       setTimeout(() => {
         setIsInterviewComplete(true);
       }, 2000);
@@ -288,114 +343,197 @@ const VirtualInterview = () => {
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [interviewRounds, activeRound]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const sendNextQuestion = () => {
-    if (currentQuestion < interviewQuestions.length) {
-      setIsThinking(true);
+  const sendNextQuestion = (roundId: string) => {
+    setInterviewRounds(prev => {
+      const updated = [...prev];
+      const roundIndex = updated.findIndex(r => r.id === roundId);
       
-      // Simulate AI thinking delay
-      setTimeout(() => {
-        const newMessage: Message = {
-          id: `question-${currentQuestion}`,
-          role: "assistant",
-          content: interviewQuestions[currentQuestion],
-          timestamp: new Date(),
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-        setIsThinking(false);
-        setCurrentQuestion(prev => prev + 1);
-      }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
-    } else {
-      // Interview complete
-      setIsThinking(true);
+      if (roundIndex === -1) return prev;
       
-      setTimeout(() => {
-        const finalMessage: Message = {
-          id: "interview-complete",
-          role: "assistant",
-          content: "Thank you for completing the interview. I appreciate your thoughtful responses and examples. Based on your interview, technical assessment, and resume, I'll now provide a comprehensive evaluation of your candidacy for the selected package level. Click the 'View Results' button when you're ready to see your personalized feedback and job success prediction.",
-          timestamp: new Date(),
-        };
+      const round = updated[roundIndex];
+      
+      if (round.currentQuestionIndex < round.questions.length) {
+        setIsThinking(true);
         
-        setMessages(prev => [...prev, finalMessage]);
-        setIsThinking(false);
-        setIsInterviewComplete(true);
-        setIsTimerRunning(false);
+        // Will add the question after a delay (simulating thinking)
+        setTimeout(() => {
+          setInterviewRounds(current => {
+            const updatedRounds = [...current];
+            const currentRound = updatedRounds[roundIndex];
+            
+            const newMessage: Message = {
+              id: `question-${currentRound.id}-${currentRound.currentQuestionIndex}`,
+              role: "assistant",
+              content: currentRound.questions[currentRound.currentQuestionIndex],
+              timestamp: new Date(),
+            };
+            
+            currentRound.messages = [...currentRound.messages, newMessage];
+            currentRound.currentQuestionIndex += 1;
+            
+            setIsThinking(false);
+            return updatedRounds;
+          });
+        }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+      } else if (!round.completed) {
+        // Round complete
+        setIsThinking(true);
         
-        // Ensure we save the interview data here to prevent issues
-        // Calculate average interview score
-        const averageScore = interviewScore.reduce((sum, score) => sum + score, 0) / interviewScore.length;
-        
-        // Store interview data in localStorage
-        localStorage.setItem('interviewComplete', 'true');
-        localStorage.setItem('interviewScore', Math.round(averageScore).toString());
-        
-        // Store interview answers for analysis
-        const userResponses = messages.filter(m => m.role === "user").map(m => m.content);
-        localStorage.setItem('interviewResponses', JSON.stringify(userResponses));
-      }, 1500);
-    }
+        setTimeout(() => {
+          setInterviewRounds(current => {
+            const updatedRounds = [...current];
+            const currentRound = updatedRounds[roundIndex];
+            
+            const finalMessage: Message = {
+              id: `complete-${currentRound.id}`,
+              role: "assistant",
+              content: `Thank you for completing the ${currentRound.name}. ${roundIndex < 3 ? "Let's proceed to the next round." : "You've now completed all interview rounds. We'll analyze your responses and provide feedback."}`,
+              timestamp: new Date(),
+            };
+            
+            currentRound.messages = [...currentRound.messages, finalMessage];
+            currentRound.completed = true;
+            
+            setIsThinking(false);
+            
+            // If this is not the last round, move to next round
+            if (roundIndex < 3) {
+              const nextRoundId = updatedRounds[roundIndex + 1].id;
+              setTimeout(() => {
+                setActiveRound(nextRoundId);
+                setCurrentRoundIndex(roundIndex + 1);
+                // Send first question in next round
+                setTimeout(() => {
+                  sendNextQuestion(nextRoundId);
+                }, 1000);
+              }, 2000);
+            } else {
+              // All rounds complete
+              setTimeout(() => {
+                setIsInterviewComplete(true);
+                setIsTimerRunning(false);
+                
+                // Calculate average interview score
+                let totalScore = 0;
+                let totalQuestions = 0;
+                
+                updatedRounds.forEach(round => {
+                  if (round.scores.length > 0) {
+                    totalScore += round.scores.reduce((sum, score) => sum + score, 0);
+                    totalQuestions += round.scores.length;
+                  }
+                });
+                
+                const averageScore = totalQuestions > 0 ? Math.round(totalScore / totalQuestions) : 0;
+                
+                // Store interview data in localStorage
+                localStorage.setItem('interviewComplete', 'true');
+                localStorage.setItem('interviewScore', averageScore.toString());
+                
+                // Store interview answers for analysis
+                const userResponses = updatedRounds.flatMap(round => 
+                  round.messages.filter(m => m.role === "user").map(m => m.content)
+                );
+                localStorage.setItem('interviewResponses', JSON.stringify(userResponses));
+                
+                // Store round scores
+                const roundScores = updatedRounds.map(round => {
+                  const avgRoundScore = round.scores.length > 0 
+                    ? Math.round(round.scores.reduce((sum, score) => sum + score, 0) / round.scores.length)
+                    : 0;
+                  return { round: round.id, score: avgRoundScore };
+                });
+                localStorage.setItem('roundScores', JSON.stringify(roundScores));
+              }, 2000);
+            }
+            
+            return updatedRounds;
+          });
+        }, 1500);
+      }
+      
+      return updated;
+    });
   };
 
   const handleSendMessage = () => {
     if (!input.trim()) return;
     
-    const newMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Analyze answer (simulated AI scoring with more variance based on package level)
-    // Senior level has higher expectations
-    const baseScore = 5;
-    const packageMultiplier = selectedPackage === 'senior' ? 0.5 : (selectedPackage === 'mid' ? 0.7 : 0.9);
-    const answerLength = input.length;
-    const randomFactor = Math.random() * 2;
-    
-    // Score calculation - longer answers generally score better, with package-based scaling
-    const lengthScore = Math.min(5, Math.floor(answerLength / 100));
-    const answerScore = Math.floor(baseScore + lengthScore * packageMultiplier + randomFactor);
-    
-    // Update score for current question
-    setInterviewScore(prev => {
-      const newScores = [...prev];
-      newScores[currentQuestion - 1] = answerScore;
-      return newScores;
+    setInterviewRounds(prev => {
+      const updated = [...prev];
+      const roundIndex = updated.findIndex(r => r.id === activeRound);
+      
+      if (roundIndex === -1) return prev;
+      
+      const round = updated[roundIndex];
+      
+      const newMessage: Message = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: input,
+        timestamp: new Date(),
+      };
+      
+      round.messages = [...round.messages, newMessage];
+      
+      // Analyze answer (simulated AI scoring with more variance based on package level)
+      // Senior level has higher expectations
+      const baseScore = 5;
+      const packageMultiplier = selectedPackage === 'senior' ? 0.5 : (selectedPackage === 'mid' ? 0.7 : 0.9);
+      const answerLength = input.length;
+      const randomFactor = Math.random() * 2;
+      
+      // Score calculation - longer answers generally score better, with package-based scaling
+      const lengthScore = Math.min(5, Math.floor(answerLength / 100));
+      const answerScore = Math.floor(baseScore + lengthScore * packageMultiplier + randomFactor);
+      
+      // Update score for current question
+      round.scores = [...round.scores, answerScore];
+      
+      return updated;
     });
     
     setInput("");
     
     // Send next question after a delay
     setTimeout(() => {
-      sendNextQuestion();
+      sendNextQuestion(activeRound);
     }, 500);
   };
 
   const generateRealisticResponse = () => {
-    // Generate more realistic and personalized responses based on job title and package
-    const jobSpecificContent = [
-      `Based on my experience with ${resumeData.company}, I've developed strong skills in problem-solving and teamwork. I've successfully led projects with tight deadlines by focusing on clear communication and prioritization.`,
-      `In my previous role, I implemented an automated testing framework that reduced our QA time by 40%. This required collaborating closely with both development and business teams to ensure all requirements were met.`,
-      `I believe my background in ${resumeData.jobTitle.toLowerCase().includes("data") ? "data analysis and machine learning" : resumeData.jobTitle.toLowerCase().includes("front") ? "UI/UX design and frontend frameworks" : "software architecture and system design"} makes me particularly well-suited for this position.`
-    ];
-    
-    const packageSpecificContent = {
-      'entry': "I'm eager to grow my skills and take on new challenges in this role. I'm a quick learner and thrive in collaborative environments.",
-      'mid': "Having worked in similar roles for several years, I've developed a strong technical foundation and now I'm looking to expand my impact and take on more responsibility.",
-      'senior': "Throughout my career, I've led multiple teams and high-impact projects. I focus on mentoring junior team members while also driving technical excellence and innovation."
+    // Generate more realistic and personalized responses based on job title, active round, and package
+    const roundSpecificResponses: {[key: string]: string[]} = {
+      "technical": [
+        `In my experience as a ${resumeData.jobTitle}, I've worked extensively with technologies like React, Node.js, and AWS. I've implemented CI/CD pipelines and microservices architectures that improved deployment times by 40%.`,
+        `Throughout my career, I've specialized in ${resumeData.jobTitle.toLowerCase().includes("data") ? "data processing pipelines and machine learning models" : resumeData.jobTitle.toLowerCase().includes("front") ? "responsive UI frameworks and state management" : "scalable backend services and database optimization"}. For instance, I optimized database queries that reduced response times by 60%.`,
+        `I approach debugging methodically by isolating components, using logging, and leveraging monitoring tools. In my previous role, I identified and fixed a memory leak that was causing periodic system crashes.`
+      ],
+      "coding": [
+        `To solve this problem, I would use a ${selectedPackage === 'senior' ? 'dynamic programming approach' : 'iterative solution'}. First, I would initialize variables to track the state. Then I would iterate through the data structure, applying the necessary transformations...`,
+        `Here's how I would implement this function:\n\nfunction solution(input) {\n  // Check edge cases\n  if (!input) return null;\n  \n  // Process the input\n  const result = input.map(item => process(item));\n  \n  // Return the result\n  return result.filter(Boolean);\n}\n\nThis handles all edge cases while maintaining O(n) time complexity.`,
+        `For this system design, I would use a microservices architecture with the following components: 1) API Gateway for request routing, 2) Authentication service, 3) Core business logic services, 4) Database layer with proper caching, and 5) Asynchronous messaging for event-driven operations.`
+      ],
+      "domain": [
+        `In the ${resumeData.jobTitle.toLowerCase().includes("data") ? "data science" : resumeData.jobTitle.toLowerCase().includes("front") ? "frontend development" : "software engineering"} domain, I've found that ${selectedPackage === 'senior' ? 'leading cross-functional teams requires both technical expertise and strong communication skills' : 'collaboration between developers and stakeholders is crucial for project success'}. For example, I implemented a domain-specific solution that increased business efficiency by 35%.`,
+        `My domain expertise in ${resumeData.jobTitle} has been particularly valuable when ${selectedPackage === 'senior' ? 'architecting solutions that balance technical requirements with business needs' : 'implementing industry-specific features that meet customer expectations'}. I stay current with industry trends through professional associations and continuing education.`,
+        `I've applied my domain knowledge to develop specialized solutions for ${resumeData.company}-like environments, focusing on ${resumeData.jobTitle.toLowerCase().includes("data") ? "predictive analytics and data visualization" : resumeData.jobTitle.toLowerCase().includes("front") ? "user experience and accessibility" : "system reliability and performance optimization"}.`
+      ],
+      "hr": [
+        `I'm motivated by solving complex problems and seeing the direct impact of my work. At my previous company, I led a project that automated reporting processes, saving the team 15 hours per week and improving data accuracy significantly.`,
+        `My approach to work-life balance involves clear boundaries, effective time management, and regular self-assessment. I believe that maintaining balance makes me more productive and creative when I am working.`,
+        `I'm particularly interested in joining ${resumeData.company} because of your innovative approach to ${resumeData.jobTitle.toLowerCase().includes("data") ? "data-driven decision making" : resumeData.jobTitle.toLowerCase().includes("front") ? "user experience design" : "software development"} and your strong company culture that emphasizes both technical excellence and professional growth.`
+      ]
     };
     
-    return `${jobSpecificContent[Math.floor(Math.random() * jobSpecificContent.length)]} ${packageSpecificContent[selectedPackage as keyof typeof packageSpecificContent]}`;
+    const responses = roundSpecificResponses[activeRound] || roundSpecificResponses["technical"];
+    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   const toggleRecording = () => {
@@ -422,6 +560,15 @@ const VirtualInterview = () => {
     navigate('/results');
   };
   
+  // Find current round data
+  const currentRound = interviewRounds.find(round => round.id === activeRound);
+  const messages = currentRound?.messages || [];
+  
+  // Calculate progress
+  const completedRounds = interviewRounds.filter(round => round.completed).length;
+  const totalRounds = interviewRounds.length;
+  const progressPercentage = Math.round((completedRounds / totalRounds) * 100);
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -440,91 +587,25 @@ const VirtualInterview = () => {
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <AnimatePresence initial={false}>
-          {messages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className={`flex ${message.role === "assistant" ? "justify-start" : "justify-end"}`}
-            >
-              <div
-                className={`flex max-w-[80%] ${
-                  message.role === "assistant"
-                    ? "items-start"
-                    : "items-start flex-row-reverse"
-                }`}
-              >
-                <div
-                  className={`flex items-center justify-center h-10 w-10 rounded-full shrink-0 ${
-                    message.role === "assistant"
-                      ? "bg-primary/10 text-primary mr-3"
-                      : "bg-secondary ml-3"
-                  }`}
-                >
-                  {message.role === "assistant" ? (
-                    <User className="h-5 w-5" />
-                  ) : (
-                    <User className="h-5 w-5" />
-                  )}
-                </div>
-                <div
-                  className={`p-4 rounded-2xl ${
-                    message.role === "assistant"
-                      ? "bg-secondary text-foreground"
-                      : "bg-primary text-primary-foreground"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  <div
-                    className={`text-xs mt-1 ${
-                      message.role === "assistant"
-                        ? "text-muted-foreground"
-                        : "text-primary-foreground/70"
-                    }`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        
-        {isThinking && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-start"
-          >
-            <div className="flex items-start max-w-[80%]">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full shrink-0 bg-primary/10 text-primary mr-3">
-                <User className="h-5 w-5" />
-              </div>
-              <div className="p-4 rounded-2xl bg-secondary text-foreground">
-                <div className="flex space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.2s" }}></div>
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.4s" }}></div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-      
       {isInterviewComplete ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="p-4 flex justify-center"
+          className="flex flex-col items-center justify-center flex-1 p-8 text-center"
         >
+          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold mb-4">Interview Completed</h2>
+          <p className="text-gray-600 mb-6 max-w-2xl">
+            Thank you for completing all rounds of the interview process. We appreciate your time and thoughtful responses. 
+            Our team will carefully review your performance across all rounds and assess your fit for the {resumeData.jobTitle} role at {resumeData.company}.
+          </p>
+          <p className="text-gray-800 font-medium mb-8 max-w-2xl">
+            Based on your performance, we will get back to you soon through an email with further details about the next steps in the hiring process.
+          </p>
           <Button
             onClick={viewResults}
             className="button-glow"
@@ -534,47 +615,193 @@ const VirtualInterview = () => {
           </Button>
         </motion.div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 border-t"
+        <Tabs 
+          value={activeRound} 
+          className="flex-1 flex flex-col"
+          onValueChange={isInterviewComplete ? undefined : (value) => {
+            // Only allow changing to completed rounds or the current active round
+            const targetRound = interviewRounds.find(r => r.id === value);
+            const currentRoundIndex = interviewRounds.findIndex(r => r.id === activeRound);
+            const targetRoundIndex = interviewRounds.findIndex(r => r.id === value);
+            
+            if (targetRound && (targetRound.completed || targetRoundIndex === currentRoundIndex)) {
+              setActiveRound(value);
+            } else {
+              toast({
+                title: "Round locked",
+                description: "You need to complete the current round first.",
+                variant: "destructive",
+              });
+            }
+          }}
         >
-          <div className="flex items-end space-x-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your answer..."
-              className="min-h-[80px] resize-none rounded-xl focus:ring-2 focus:ring-primary/50 transition-all duration-300"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            <div className="flex flex-col space-y-2">
-              <Button
-                type="button"
-                size="icon"
-                variant={isRecording ? "destructive" : "outline"}
-                onClick={toggleRecording}
-                className="rounded-full h-10 w-10 transition-all duration-300"
-              >
-                {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-              </Button>
-              
-              <Button
-                type="button"
-                size="icon"
-                onClick={handleSendMessage}
-                className="rounded-full h-10 w-10 bg-primary hover:bg-primary/90 transition-all duration-300"
-                disabled={!input.trim()}
-              >
-                <Send className="h-5 w-5" />
-              </Button>
+          <div className="p-4 bg-slate-100/30">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+              <h2 className="text-xl font-bold mb-2 sm:mb-0">Interview Process</h2>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">{progressPercentage}% Complete</span>
+                <div className="w-40 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-500 ease-in-out" 
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
             </div>
+            
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {interviewRounds.map((round, index) => (
+                <TabsTrigger 
+                  key={round.id}
+                  value={round.id}
+                  disabled={!round.completed && index > currentRoundIndex}
+                  className={`flex items-center ${round.completed ? 'bg-green-100' : (index === currentRoundIndex ? 'bg-blue-100' : '')}`}
+                >
+                  <div className="mr-2">{round.icon}</div>
+                  <span className="hidden sm:inline">{round.name}</span>
+                  <span className="sm:hidden">{round.id.charAt(0).toUpperCase()}</span>
+                  {round.completed && (
+                    <svg className="ml-2 h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </div>
-        </motion.div>
+          
+          {interviewRounds.map((round) => (
+            <TabsContent key={round.id} value={round.id} className="flex-1 flex flex-col mt-0">
+              <Card className="flex-1 flex flex-col border-0 rounded-none">
+                <CardHeader className="pb-2">
+                  <CardTitle>{round.name}</CardTitle>
+                  <CardDescription>{round.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <AnimatePresence initial={false}>
+                    {round.messages.map((message) => (
+                      <motion.div
+                        key={message.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className={`flex ${message.role === "assistant" ? "justify-start" : "justify-end"}`}
+                      >
+                        <div
+                          className={`flex max-w-[80%] ${
+                            message.role === "assistant"
+                              ? "items-start"
+                              : "items-start flex-row-reverse"
+                          }`}
+                        >
+                          <div
+                            className={`flex items-center justify-center h-10 w-10 rounded-full shrink-0 ${
+                              message.role === "assistant"
+                                ? "bg-primary/10 text-primary mr-3"
+                                : "bg-secondary ml-3"
+                            }`}
+                          >
+                            {message.role === "assistant" ? (
+                              <User className="h-5 w-5" />
+                            ) : (
+                              <User className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div
+                            className={`p-4 rounded-2xl ${
+                              message.role === "assistant"
+                                ? "bg-secondary text-foreground"
+                                : "bg-primary text-primary-foreground"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                            <div
+                              className={`text-xs mt-1 ${
+                                message.role === "assistant"
+                                  ? "text-muted-foreground"
+                                  : "text-primary-foreground/70"
+                              }`}
+                            >
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  
+                  {activeRound === round.id && isThinking && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex justify-start"
+                    >
+                      <div className="flex items-start max-w-[80%]">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-full shrink-0 bg-primary/10 text-primary mr-3">
+                          <User className="h-5 w-5" />
+                        </div>
+                        <div className="p-4 rounded-2xl bg-secondary text-foreground">
+                          <div className="flex space-x-2">
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.4s" }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </CardContent>
+              </Card>
+              
+              {activeRound === round.id && !round.completed && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 border-t"
+                >
+                  <div className="flex items-end space-x-2">
+                    <Textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Type your answer..."
+                      className="min-h-[80px] resize-none rounded-xl focus:ring-2 focus:ring-primary/50 transition-all duration-300"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col space-y-2">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant={isRecording ? "destructive" : "outline"}
+                        onClick={toggleRecording}
+                        className="rounded-full h-10 w-10 transition-all duration-300"
+                      >
+                        {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        size="icon"
+                        onClick={handleSendMessage}
+                        className="rounded-full h-10 w-10 bg-primary hover:bg-primary/90 transition-all duration-300"
+                        disabled={!input.trim()}
+                      >
+                        <Send className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
       )}
     </motion.div>
   );

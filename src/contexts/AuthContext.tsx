@@ -9,11 +9,15 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  getAllUsers: () => User[];
 }
 
 interface User {
+  id: string;
   name: string;
   email: string;
+  createdAt: string;
+  lastLogin: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,18 +40,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     // Simulate API call
     try {
-      // In a real app, this would be an API call to validate credentials
-      if (email && password) {
-        // For demo, create mock user
-        const mockUser = {
-          name: email.split('@')[0], // Extract name from email
-          email,
-        };
+      // Get all registered users
+      const usersString = localStorage.getItem("registeredUsers");
+      const users = usersString ? JSON.parse(usersString) : [];
+      
+      // Find the user with matching credentials
+      const foundUser = users.find((u: User) => u.email === email);
+      
+      if (foundUser) {
+        // Update last login time
+        foundUser.lastLogin = new Date().toISOString();
         
-        // Store user in localStorage for session persistence
-        localStorage.setItem("user", JSON.stringify(mockUser));
+        // Update user in the registered users list
+        const updatedUsers = users.map((u: User) => 
+          u.email === email ? foundUser : u
+        );
         
-        setUser(mockUser);
+        localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers));
+        localStorage.setItem("user", JSON.stringify(foundUser));
+        
+        setUser(foundUser);
         setIsAuthenticated(true);
         
         toast({
@@ -72,23 +84,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (name: string, email: string, password: string) => {
     // Simulate API call
     try {
-      // In a real app, this would be an API call to create a new user
       if (name && email && password) {
-        // For demo, create mock user
-        const mockUser = {
+        // Get existing users
+        const usersString = localStorage.getItem("registeredUsers");
+        const existingUsers = usersString ? JSON.parse(usersString) : [];
+        
+        // Check if user already exists
+        if (existingUsers.some((u: User) => u.email === email)) {
+          throw new Error("User with this email already exists");
+        }
+        
+        // Create new user
+        const newUser = {
+          id: Date.now().toString(),
           name,
           email,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
         };
         
-        // Store user in localStorage for session persistence
-        localStorage.setItem("user", JSON.stringify(mockUser));
+        // Add to registered users
+        const updatedUsers = [...existingUsers, newUser];
+        localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers));
         
-        setUser(mockUser);
+        // Set as current user
+        localStorage.setItem("user", JSON.stringify(newUser));
+        
+        setUser(newUser);
         setIsAuthenticated(true);
         
         toast({
           title: "Account created successfully",
-          description: "Welcome to Job Fortune!",
+          description: "Welcome to JobGenisis!",
         });
         
         navigate("/");
@@ -119,9 +146,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     navigate("/login");
   };
+  
+  // Function to get all registered users
+  const getAllUsers = () => {
+    const usersString = localStorage.getItem("registeredUsers");
+    return usersString ? JSON.parse(usersString) : [];
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, signup, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, signup, logout, getAllUsers }}>
       {children}
     </AuthContext.Provider>
   );

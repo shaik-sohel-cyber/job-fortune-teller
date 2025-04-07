@@ -133,8 +133,8 @@ const ResumeVerification = () => {
     >
       <div className="space-y-8">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold">Resume Verification</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-bold text-white">Resume Verification</h2>
+          <p className="text-slate-300">
             We're verifying the information on your resume for accuracy and completeness.
           </p>
         </div>
@@ -149,18 +149,18 @@ const ResumeVerification = () => {
               key={item.id}
               className={`p-4 border rounded-lg flex items-center justify-between transition-all ${
                 item.status === 'verified' 
-                  ? 'border-green-200 bg-green-50' 
+                  ? 'border-green-500 bg-green-900/30 text-white' 
                   : item.status === 'failed'
-                    ? 'border-red-200 bg-red-50'
+                    ? 'border-red-500 bg-red-900/30 text-white'
                     : item.status === 'verifying'
-                      ? 'border-blue-200 bg-blue-50'
-                      : 'border-gray-200'
+                      ? 'border-blue-500 bg-blue-900/30 text-white'
+                      : 'border-slate-600 bg-slate-800/30 text-white'
               }`}
             >
               <span className="font-medium">{item.label}</span>
               <div>
                 {item.status === 'pending' && (
-                  <div className="h-6 w-6 rounded-full border-2 border-gray-300"></div>
+                  <div className="h-6 w-6 rounded-full border-2 border-slate-500"></div>
                 )}
                 {item.status === 'verifying' && (
                   <Loader2 className="h-6 w-6 text-blue-500 animate-spin" />
@@ -182,18 +182,18 @@ const ResumeVerification = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <div className="p-4 rounded-lg border text-center my-6">
+            <div className="p-4 rounded-lg border border-slate-700 bg-slate-800 text-white text-center my-6">
               <h3 className="text-xl font-medium mb-2">Verification Complete</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-slate-300 mb-4">
                 {verificationItems.filter(item => item.status === 'verified').length} out of {verificationItems.length} items verified successfully.
               </p>
-              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden mb-4">
+              <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden mb-4">
                 <div 
                   className={`h-full ${getProgressColor()}`}
                   style={{ width: `${(verificationItems.filter(item => item.status === 'verified').length / verificationItems.length) * 100}%` }}
                 ></div>
               </div>
-              <Button onClick={handleContinue} className="button-glow w-full">
+              <Button onClick={handleContinue} className="button-glow w-full text-white">
                 Continue to Technical Assessment <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>

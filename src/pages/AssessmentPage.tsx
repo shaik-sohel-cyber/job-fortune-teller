@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import OnlineAssessment from "@/components/OnlineAssessment";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CalendarClock } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle, ArrowRight } from "lucide-react";
 
 const AssessmentPage = () => {
   const navigate = useNavigate();
@@ -14,8 +14,10 @@ const AssessmentPage = () => {
   const [blockedInfo, setBlockedInfo] = useState<{
     company: string;
     cooldownUntil: string;
-    remainingDays: number;
+    remainingMinutes: number;
   } | null>(null);
+  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
+  const [assessmentPassed, setAssessmentPassed] = useState(false);
 
   useEffect(() => {
     // Check if user has completed earlier steps
@@ -49,6 +51,13 @@ const AssessmentPage = () => {
       return;
     }
 
+    // Check if assessment was already completed and passed
+    const assessmentPassedLS = localStorage.getItem('assessmentPassed');
+    if (assessmentPassedLS === 'true') {
+      setAssessmentCompleted(true);
+      setAssessmentPassed(true);
+    }
+
     // Check if company is in cooldown period
     const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
     const company = resumeData.company || '';
@@ -59,66 +68,123 @@ const AssessmentPage = () => {
       const currentDate = new Date();
       
       if (cooldownUntil > currentDate) {
-        // Calculate remaining days
+        // Calculate remaining minutes
         const diffTime = cooldownUntil.getTime() - currentDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffMinutes = Math.ceil(diffTime / (1000 * 60));
         
         setIsBlocked(true);
         setBlockedInfo({
           company,
-          cooldownUntil: cooldownUntil.toLocaleDateString(),
-          remainingDays: diffDays
+          cooldownUntil: cooldownUntil.toLocaleTimeString(),
+          remainingMinutes: diffMinutes
         });
         
         toast({
           title: "Assessment Blocked",
-          description: `You can reapply to ${company} after ${diffDays} days.`,
+          description: `You can retry this assessment after ${diffMinutes} minutes.`,
           variant: "destructive",
         });
       }
     }
   }, [navigate, toast]);
 
+  // Listen for assessment completion
+  useEffect(() => {
+    const handleAssessmentComplete = (event: Event) => {
+      const customEvent = event as CustomEvent<{score: number, passed: boolean}>;
+      const { score, passed } = customEvent.detail;
+      
+      // Store assessment results
+      localStorage.setItem('assessmentScore', score.toString());
+      localStorage.setItem('assessmentPassed', passed.toString());
+      
+      setAssessmentCompleted(true);
+      setAssessmentPassed(passed);
+      
+      if (passed) {
+        toast({
+          title: "Assessment Passed",
+          description: "Congratulations! You can now proceed to the interview.",
+        });
+      } else {
+        // Handle failed assessment
+        toast({
+          title: "Assessment Not Passed",
+          description: "Sorry, you didn't meet the required score. Please try again later.",
+          variant: "destructive",
+        });
+        
+        // Set cooldown period for this company
+        const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
+        const company = resumeData.company || '';
+        
+        if (company) {
+          const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
+          const cooldownUntil = new Date();
+          cooldownUntil.setMinutes(cooldownUntil.getMinutes() + 30); // 30 minute cooldown
+          
+          failedCompanies[company] = {
+            lastAttempt: new Date().toISOString(),
+            cooldownUntil: cooldownUntil.toISOString()
+          };
+          
+          localStorage.setItem('failedCompanies', JSON.stringify(failedCompanies));
+        }
+      }
+    };
+
+    // Add event listener for assessment completion
+    window.addEventListener('assessmentComplete', handleAssessmentComplete);
+    
+    return () => {
+      window.removeEventListener('assessmentComplete', handleAssessmentComplete);
+    };
+  }, [navigate, toast]);
+
+  const handleProceedToInterview = () => {
+    navigate('/interview');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4 flex flex-col"
+      className="min-h-screen pt-20 pb-10 px-4 flex flex-col bg-gradient-to-b from-black to-slate-900 text-white"
     >
       {isBlocked && blockedInfo ? (
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
+            className="bg-slate-800 text-white shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
           >
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
-              <AlertTriangle className="h-10 w-10 text-red-600" />
+            <div className="w-20 h-20 bg-red-900/50 rounded-full flex items-center justify-center mb-6">
+              <AlertTriangle className="h-10 w-10 text-red-500" />
             </div>
             
             <h2 className="text-2xl font-bold mb-2">Assessment Access Blocked</h2>
             
-            <div className="w-full max-w-md bg-red-50 border border-red-200 rounded-lg p-4 my-6 text-center">
-              <p className="text-gray-700">
+            <div className="w-full max-w-md bg-red-900/30 border border-red-800 rounded-lg p-4 my-6 text-center">
+              <p className="text-white">
                 You recently attempted an assessment for <span className="font-semibold">{blockedInfo.company}</span> but did not meet the required score.
               </p>
               
               <div className="flex items-center justify-center gap-2 my-4">
                 <CalendarClock className="h-5 w-5 text-primary" />
                 <span className="font-medium text-primary">
-                  Cooldown Period: {blockedInfo.remainingDays} days remaining
+                  Cooldown Period: {blockedInfo.remainingMinutes} minutes remaining
                 </span>
               </div>
               
-              <p className="text-sm text-gray-600">
-                You can reapply after {blockedInfo.cooldownUntil}
+              <p className="text-sm text-slate-300">
+                You can retry after {blockedInfo.cooldownUntil}
               </p>
             </div>
             
-            <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left w-full max-w-md">
+            <div className="bg-slate-700 p-4 rounded-lg mb-6 text-left w-full max-w-md">
               <h4 className="font-medium mb-2">What should you do now?</h4>
-              <ul className="space-y-2 text-sm pl-2">
+              <ul className="space-y-2 text-sm pl-2 text-slate-300">
                 <li>• Review the suggested improvement topics from your previous attempt</li>
                 <li>• Practice relevant technical skills</li>
                 <li>• Return after the cooldown period with improved knowledge</li>
@@ -130,6 +196,7 @@ const AssessmentPage = () => {
               <Button 
                 onClick={() => navigate('/')} 
                 variant="outline" 
+                className="text-white border-slate-600 hover:bg-slate-700"
               >
                 Return Home
               </Button>
@@ -142,8 +209,58 @@ const AssessmentPage = () => {
             </div>
           </motion.div>
         </div>
+      ) : assessmentCompleted && assessmentPassed ? (
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-slate-800 text-white shadow-lg rounded-xl overflow-hidden p-8 flex flex-col items-center"
+          >
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            
+            <h2 className="text-2xl font-bold mb-2">Assessment Completed Successfully!</h2>
+            
+            <div className="w-full max-w-md bg-green-900/30 border border-green-800 rounded-lg p-4 my-6 text-center">
+              <p className="text-white">
+                Congratulations! You've passed the assessment for <span className="font-semibold">
+                  {JSON.parse(localStorage.getItem('resumeData') || '{}').company || 'this company'}
+                </span>.
+              </p>
+              
+              <div className="flex items-center justify-center gap-2 my-4">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span className="font-medium text-green-400">
+                  Score: {localStorage.getItem('assessmentScore') || '0'}%
+                </span>
+              </div>
+              
+              <p className="text-sm text-slate-300">
+                You are now eligible to proceed to the interview round
+              </p>
+            </div>
+            
+            <div className="bg-slate-700 p-4 rounded-lg mb-6 text-left w-full max-w-md">
+              <h4 className="font-medium mb-2">What happens next?</h4>
+              <ul className="space-y-2 text-sm pl-2 text-slate-300">
+                <li>• You'll participate in a multi-round interview process</li>
+                <li>• The interview includes technical, coding, domain-specific, and HR rounds</li>
+                <li>• Prepare to answer questions relevant to your job role</li>
+                <li>• Your performance will be evaluated against company requirements</li>
+              </ul>
+            </div>
+            
+            <Button 
+              onClick={handleProceedToInterview} 
+              className="button-glow"
+            >
+              Proceed to Interview <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </motion.div>
+        </div>
       ) : (
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden">
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-slate-800 shadow-lg rounded-xl overflow-hidden">
           <div className="bg-primary p-4 text-white">
             <h2 className="text-xl font-semibold">Technical Assessment</h2>
             <p className="text-sm text-white/80">Complete the assessment to proceed to your interview</p>

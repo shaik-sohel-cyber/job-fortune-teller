@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -18,12 +19,18 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signup } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      return; // Toast is handled in the auth context
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
+      return;
     }
     
     setIsLoading(true);
@@ -33,17 +40,19 @@ const Signup = () => {
       // The redirect is handled in the signup function
     } catch (error) {
       // Error handling is done in the signup function
+      console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="container max-w-md mx-auto px-4 pt-28 pb-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
       >
         <Card className="glass-card">
           <CardHeader className="space-y-1">

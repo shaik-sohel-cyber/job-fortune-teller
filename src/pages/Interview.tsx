@@ -15,7 +15,7 @@ const Interview = () => {
 
   useEffect(() => {
     const checkAccess = () => {
-      // Check if user has completed the required steps
+      // Check if user has completed the required steps in order
       if (!localStorage.getItem('resumeData')) {
         toast({
           title: "Resume not uploaded",
@@ -48,7 +48,9 @@ const Interview = () => {
 
       // Check if assessment was completed and passed
       const assessmentPassed = localStorage.getItem('assessmentPassed');
-      if (!assessmentPassed) {
+      const assessmentScore = localStorage.getItem('assessmentScore');
+      
+      if (!assessmentScore) {
         toast({
           title: "Assessment not completed",
           description: "Please complete the assessment first.",
@@ -58,8 +60,8 @@ const Interview = () => {
         return false;
       }
 
-      // Only allow access if assessment was passed
-      if (assessmentPassed === "false") {
+      // Only allow access if assessment was passed with required score
+      if (assessmentPassed !== "true") {
         toast({
           title: "Assessment not passed",
           description: "You need to pass the assessment to proceed to the interview.",
@@ -79,7 +81,7 @@ const Interview = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
+      <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-b from-black to-slate-900">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
@@ -90,17 +92,17 @@ const Interview = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen pt-20 pb-10 px-4"
+      className="min-h-screen pt-20 pb-10 px-4 bg-gradient-to-b from-black to-slate-900 text-white"
     >
       {isAccessAllowed ? (
         <VirtualInterview />
       ) : (
-        <div className="max-w-4xl mx-auto w-full bg-white/70 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden p-8 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="h-8 w-8 text-red-600" />
+        <div className="max-w-4xl mx-auto w-full bg-slate-800/90 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden p-8 text-center">
+          <div className="w-16 h-16 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="h-8 w-8 text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold mb-4">Access Restricted</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold mb-4 text-white">Access Restricted</h2>
+          <p className="text-slate-300 mb-6">
             You need to pass the technical assessment before proceeding to the interview.
           </p>
           <Button onClick={() => navigate('/assessment')} className="button-glow">
