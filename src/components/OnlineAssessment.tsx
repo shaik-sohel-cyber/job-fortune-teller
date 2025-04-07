@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -182,13 +181,13 @@ const OnlineAssessment = () => {
 
     if (!isPassed) {
       setSuggestedTopics(generateImprovementTopics());
-      setFailureRedirectTimer(10); // Changed to 10 minutes (600 seconds)
+      setFailureRedirectTimer(10);
 
       const failedCompanies = JSON.parse(localStorage.getItem('failedCompanies') || '{}');
       const company = resumeData.company;
 
       const cooldownDate = new Date();
-      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10); // Set cooldown to 10 minutes
+      cooldownDate.setMinutes(cooldownDate.getMinutes() + 10);
 
       failedCompanies[company] = {
         timestamp: new Date().toISOString(),
@@ -205,17 +204,28 @@ const OnlineAssessment = () => {
     localStorage.setItem('assessmentCutoff', cutoffScore.toString());
     localStorage.setItem('assessmentPassed', isPassed.toString());
     localStorage.setItem('incorrectAnswers', incorrectAnswers.toString());
-    localStorage.setItem('interviewComplete', 'true'); // Mark the interview as complete
+    
+    localStorage.setItem('interviewScore', '0');
+    
+    if (isPassed) {
+      const defaultRoundScores = [
+        { round: "technical", score: 0 },
+        { round: "coding", score: 0 },
+        { round: "domain", score: 0 },
+        { round: "hr", score: 0 },
+      ];
+      localStorage.setItem('roundScores', JSON.stringify(defaultRoundScores));
+    }
 
     if (isPassed) {
       toast({
         title: "Assessment Complete",
         description: `Congratulations! You scored ${percentageScore}%, which meets the ${cutoffScore}% cutoff for ${resumeData.company}.`,
       });
-      // Navigate to results page
-      setTimeout(() => {
-        navigate('/results');
-      }, 1500);
+
+      window.dispatchEvent(new CustomEvent('assessmentComplete', {
+        detail: { score: percentageScore, passed: isPassed }
+      }));
     } else {
       toast({
         title: "Assessment Not Passed",
@@ -441,8 +451,8 @@ const OnlineAssessment = () => {
                       </ul>
                     </div>
                     
-                    <Button onClick={continueToResults} className="button-glow w-full">
-                      View Detailed Results <ArrowRight className="ml-2 h-5 w-5" />
+                    <Button onClick={continueToInterview} className="button-glow w-full">
+                      Proceed to Interview <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </>
                 );
