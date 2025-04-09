@@ -201,6 +201,15 @@ const VirtualInterview = ({ onInterviewStateChange }: VirtualInterviewProps) => 
       navigate('/package-selection');
       return;
     }
+      
+    // Check if OpenAI is initialized
+    if (!isOpenAIInitialized()) {
+      toast({
+        title: "OpenAI API Key Recommended",
+        description: "Setting an OpenAI API key will enhance your interview experience with personalized questions.",
+        variant: "default",
+      });
+    }
     
     const initializeInterviewRounds = async () => {
       // Get resume summary for context
@@ -540,6 +549,37 @@ const VirtualInterview = ({ onInterviewStateChange }: VirtualInterviewProps) => 
                   return { round: round.id, score: avgRoundScore };
                 });
                 localStorage.setItem('roundScores', JSON.stringify(roundScores));
+                
+                // Store detailed round data for AI analysis
+                updatedRounds.forEach(round => {
+                  // Extract questions and answers from messages
+                  const questions: string[] = [];
+                  const answers: string[] = [];
+                  
+                  // Get pairs of questions and answers
+                  for (let i = 0; i < round.messages.length; i++) {
+                    const message = round.messages[i];
+                    if (message.role === "assistant" && 
+                        !message.content.includes("Welcome") && 
+                        !message.content.includes("Thank you")) {
+                      // This is a question from the interviewer
+                      questions.push(message.content);
+                      
+                      // Look for the corresponding answer
+                      const nextUserMessage = round.messages.slice(i+1).find(m => m.role === "user");
+                      if (nextUserMessage) {
+                        answers.push(nextUserMessage.content);
+                      }
+                    }
+                  }
+                  
+                  // Store the round data
+                  localStorage.setItem(`${round.id}Data`, JSON.stringify({
+                    questions,
+                    answers,
+                    scores: round.scores
+                  }));
+                });
               }, 2000);
             }
             

@@ -365,11 +365,42 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
       // Only perform AI analysis if content is available as string
       if (typeof uploadedFile.content === 'string') {
         try {
-          // Analyze the resume with OpenAI
+          setIsLoading(true);
+          // Analyze the resume with OpenAI - this will extract detailed information
           const analysis = await analyzeResume(uploadedFile.content);
           
           if (analysis.success) {
             resumeDataToStore.aiAnalysis = analysis.analysis;
+            
+            // Parse the AI analysis to extract structured information
+            // This helps other components access specific resume details
+            try {
+              // Extract useful information from AI analysis
+              const analysisStr = analysis.analysis;
+              
+              // Try to extract candidate name
+              const nameMatch = analysisStr.match(/name:?\s*([^\n\.]+)/i);
+              if (nameMatch) resumeDataToStore.candidateName = nameMatch[1].trim();
+              
+              // Try to extract experience level
+              const experienceMatch = analysisStr.match(/experience:?\s*([^\n\.]+)|(\d+)\s*years?\s*of\s*experience/i);
+              if (experienceMatch) resumeDataToStore.experience = (experienceMatch[1] || experienceMatch[2]).trim();
+              
+              // Try to extract skills
+              const skillsMatch = analysisStr.match(/skills:?\s*([^\n\.]+)/i);
+              if (skillsMatch) {
+                const skillsText = skillsMatch[1].trim();
+                resumeDataToStore.skills = skillsText.split(/,\s*|\s*;\s*|\s+and\s+/);
+              }
+              
+              // Try to extract education
+              const educationMatch = analysisStr.match(/education:?\s*([^\n\.]+)/i);
+              if (educationMatch) resumeDataToStore.education = educationMatch[1].trim();
+              
+            } catch (parseError) {
+              console.error("Error parsing AI analysis:", parseError);
+              // Continue even if parsing fails
+            }
             
             toast({
               title: "AI Analysis Complete",
@@ -387,6 +418,8 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
             title: "Analysis Warning",
             description: "Resume saved, but AI analysis encountered an error.",
           });
+        } finally {
+          setIsLoading(false);
         }
       }
       

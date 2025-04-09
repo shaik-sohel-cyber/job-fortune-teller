@@ -9,6 +9,7 @@ import { CircleCheck, CircleX, Clock, AlertTriangle, Award, Send, DownloadCloud,
 import { useNavigate } from "react-router-dom";
 import { generateFinalAssessment, isOpenAIInitialized } from "@/utils/ai";
 import APIKeyInput from "./APIKeyInput";
+import { useToast } from "@/hooks/use-toast";
 
 interface RoundScore {
   round: string;
@@ -17,11 +18,20 @@ interface RoundScore {
 
 const Results = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [resumeData, setResumeData] = useState<any>(null);
   const [assessmentScore, setAssessmentScore] = useState<number>(0);
   const [interviewScore, setInterviewScore] = useState<number>(0);
   const [roundScores, setRoundScores] = useState<RoundScore[]>([]);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const [aiGeneratedResults, setAiGeneratedResults] = useState<{
+    overallScore: number;
+    strengths: string[];
+    areasOfImprovement: string[];
+    matchProbability: number;
+    feedback: string;
+  } | null>(null);
+  const [isLoadingAiResults, setIsLoadingAiResults] = useState(false);
   
   useEffect(() => {
     // Load data from localStorage
@@ -29,6 +39,7 @@ const Results = () => {
     const assessmentScoreStr = localStorage.getItem('assessmentScore');
     const interviewScoreStr = localStorage.getItem('interviewScore');
     const roundScoresStr = localStorage.getItem('roundScores');
+    const aiResultsStr = localStorage.getItem('aiGeneratedResults');
     
     if (resumeDataStr) {
       setResumeData(JSON.parse(resumeDataStr));
@@ -53,7 +64,74 @@ const Results = () => {
         { round: "hr", score: interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0 },
       ]);
     }
+    
+    // Load AI-generated results if they exist
+    if (aiResultsStr) {
+      setAiGeneratedResults(JSON.parse(aiResultsStr));
+    } else {
+      // Generate AI results if OpenAI is available
+      generateAIResults();
+    }
   }, []);
+  
+  // Function to generate AI results
+  const generateAIResults = async () => {
+    if (!isOpenAIInitialized() || !resumeData) {
+      return;
+    }
+    
+    setIsLoadingAiResults(true);
+    
+    try {
+      // Get resume summary
+      const resumeSummary = resumeData.aiAnalysis || 
+                          (typeof resumeData.fileContent === 'string' ? 
+                          resumeData.fileContent.substring(0, 500) + '...' : '');
+      
+      // Format interview rounds data
+      const interviewRounds = roundScores.map(round => {
+        // Get questions and answers for this round from localStorage
+        const roundData = localStorage.getItem(`${round.round}Data`);
+        let questions: string[] = [];
+        let answers: string[] = [];
+        let scores: number[] = [round.score];
+        
+        if (roundData) {
+          try {
+            const data = JSON.parse(roundData);
+            questions = data.questions || [];
+            answers = data.answers || [];
+            scores = data.scores || [round.score];
+          } catch (e) {
+            console.error(`Error parsing ${round.round} data:`, e);
+          }
+        }
+        
+        return {
+          questions,
+          answers,
+          scores
+        };
+      });
+      
+      // Generate assessment using OpenAI
+      const aiResults = await generateFinalAssessment(
+        resumeData.jobTitle || 'Software Developer',
+        resumeSummary,
+        interviewRounds
+      );
+      
+      setAiGeneratedResults(aiResults);
+      
+      // Save results to localStorage
+      localStorage.setItem('aiGeneratedResults', JSON.stringify(aiResults));
+      
+    } catch (error) {
+      console.error('Error generating AI results:', error);
+    } finally {
+      setIsLoadingAiResults(false);
+    }
+  };
   
   const getFeedback = (score: number) => {
     if (score >= 90) {
@@ -459,6 +537,25 @@ const Results = () => {
         </Card>
       </motion.div>
       
+      {!isOpenAIInitialized() && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mb-8"
+        >
+          <APIKeyInput 
+            onInitialized={() => {
+              toast({
+                title: "AI Features Enabled",
+                description: "Generating personalized assessment using OpenAI...",
+              });
+              generateAIResults();
+            }}
+          />
+        </motion.div>
+      )}
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -470,7 +567,52 @@ const Results = () => {
             <CardDescription>Summary of your performance and next steps</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-6">{getOverallFeedback()}</p>
+            {isLoadingAiResults ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+                <p>Generating AI assessment...</p>
+              </div>
+            ) : aiGeneratedResults ? (
+              <div className="space-y-6">
+                <p className="mb-6">{aiGeneratedResults.feedback}</p>
+                
+                <div className="bg-slate-50 p-4 rounded-lg space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2 flex items-center">
+                      <Sparkles className="h-4 w-4 mr-2 text-primary" />
+                      Key Strengths
+                    </h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {aiGeneratedResults.strengths.map((strength, index) => (
+                        <li key={index}>{strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Areas for Improvement</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {aiGeneratedResults.areasOfImprovement.map((area, index) => (
+                        <li key={index}>{area}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Match Probability</span>
+                      <p className="text-lg font-semibold">{aiGeneratedResults.matchProbability}%</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">Overall Score</span>
+                      <p className="text-lg font-semibold">{aiGeneratedResults.overallScore}/100</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="mb-6">{getOverallFeedback()}</p>
+            )}
             
             <div className="bg-slate-50 p-4 rounded-lg flex items-start space-x-4 mb-6">
               <div className="bg-blue-100 p-2 rounded-full shrink-0">
