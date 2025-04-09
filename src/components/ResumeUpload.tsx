@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Upload, Check, FileText, X, File, AlertTriangle, FileUp, FileSymlink, Loader2 } from "lucide-react";
+import { ArrowRight, Upload, Check, FileText, X, File, AlertTriangle, FileUp, FileSymlink, Loader2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { analyzeResume, isOpenAIInitialized } from "@/utils/ai";
+import APIKeyInput from "./APIKeyInput";
 
 interface UploadedFile {
   name: string;
@@ -338,19 +340,57 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
       return;
     }
 
+    // Check if OpenAI is initialized
+    if (!isOpenAIInitialized()) {
+      toast({
+        title: "OpenAI API not configured",
+        description: "Please set your OpenAI API key before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      const resumeDataToStore = {
+    try {
+      // Resume data to store
+      const resumeDataToStore: Record<string, any> = {
         fileName: uploadedFile.name,
         jobTitle,
         company,
         fileContent: uploadedFile.content,
         uploadTime: new Date().toISOString()
       };
+
+      // Only perform AI analysis if content is available as string
+      if (typeof uploadedFile.content === 'string') {
+        try {
+          // Analyze the resume with OpenAI
+          const analysis = await analyzeResume(uploadedFile.content);
+          
+          if (analysis.success) {
+            resumeDataToStore.aiAnalysis = analysis.analysis;
+            
+            toast({
+              title: "AI Analysis Complete",
+              description: "Your resume has been analyzed successfully.",
+            });
+          } else {
+            toast({
+              title: "AI Analysis Limited",
+              description: "Resume saved, but AI analysis was incomplete.",
+            });
+          }
+        } catch (error) {
+          console.error("AI analysis error:", error);
+          toast({
+            title: "Analysis Warning",
+            description: "Resume saved, but AI analysis encountered an error.",
+          });
+        }
+      }
       
+      // Store in localStorage regardless of AI analysis
       localStorage.setItem('resumeData', JSON.stringify(resumeDataToStore));
       
       if (onResumeUploaded) {
@@ -365,8 +405,17 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
         description: "Your resume has been processed. You can now proceed to verification.",
       });
       
+      setIsLoading(false);
       navigate('/verification');
-    }, 800);
+    } catch (error) {
+      console.error("Resume submission error:", error);
+      setIsLoading(false);
+      toast({
+        title: "Error",
+        description: "An error occurred while processing your resume.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -377,6 +426,8 @@ const ResumeUpload = ({ onResumeUploaded }: ResumeUploadProps) => {
       transition={{ duration: 0.5 }}
       className="w-full max-w-2xl mx-auto p-6"
     >
+      {/* API Key Input Component */}
+      <APIKeyInput />
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">Upload Your Resume</h2>

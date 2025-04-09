@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { CircleCheck, CircleX, Clock, AlertTriangle, Award, Send, DownloadCloud, Laptop, Code, BriefcaseBusiness, GraduationCap } from "lucide-react";
+import { CircleCheck, CircleX, Clock, AlertTriangle, Award, Send, DownloadCloud, Laptop, Code, BriefcaseBusiness, GraduationCap, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { generateFinalAssessment, isOpenAIInitialized } from "@/utils/ai";
+import APIKeyInput from "./APIKeyInput";
 
 interface RoundScore {
   round: string;
