@@ -17,7 +17,6 @@ import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
-import Dashboard from "@/pages/Dashboard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -45,7 +44,6 @@ const App = () => (
                 
                 {/* Protected routes - features that require login */}
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/verification" element={<VerificationPage />} />
                   <Route path="/package-selection" element={<PackageSelection />} />
