@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { CircleCheck, CircleX, Clock, AlertTriangle, Award, Send, DownloadCloud, Laptop, Code, BriefcaseBusiness, GraduationCap } from "lucide-react";
+import { CircleCheck, CircleX, Clock, AlertTriangle, Award, Send, DownloadCloud, Laptop, Code, BriefcaseBusiness, GraduationCap, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RoundScore {
   round: string;
@@ -20,37 +21,60 @@ const Results = () => {
   const [interviewScore, setInterviewScore] = useState<number>(0);
   const [roundScores, setRoundScores] = useState<RoundScore[]>([]);
   const [isEmailSent, setIsEmailSent] = useState(false);
-  
+  const [aiAssessment, setAiAssessment] = useState<any>(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(true);
   useEffect(() => {
     // Load data from localStorage
     const resumeDataStr = localStorage.getItem('resumeData');
     const assessmentScoreStr = localStorage.getItem('assessmentScore');
     const interviewScoreStr = localStorage.getItem('interviewScore');
     const roundScoresStr = localStorage.getItem('roundScores');
+    const interviewResponsesStr = localStorage.getItem('interviewResponses');
     
-    if (resumeDataStr) {
-      setResumeData(JSON.parse(resumeDataStr));
-    }
-    
-    if (assessmentScoreStr) {
-      setAssessmentScore(parseInt(assessmentScoreStr, 10));
-    }
-    
-    if (interviewScoreStr) {
-      setInterviewScore(parseInt(interviewScoreStr, 10));
-    }
+    if (resumeDataStr) setResumeData(JSON.parse(resumeDataStr));
+    if (assessmentScoreStr) setAssessmentScore(parseInt(assessmentScoreStr, 10));
+    if (interviewScoreStr) setInterviewScore(parseInt(interviewScoreStr, 10));
     
     if (roundScoresStr) {
       setRoundScores(JSON.parse(roundScoresStr));
     } else {
-      // Default round scores if not available
+      const defaultScore = interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0;
       setRoundScores([
-        { round: "technical", score: interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0 },
-        { round: "coding", score: interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0 },
-        { round: "domain", score: interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0 },
-        { round: "hr", score: interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0 },
+        { round: "technical", score: defaultScore },
+        { round: "coding", score: defaultScore },
+        { round: "domain", score: defaultScore },
+        { round: "hr", score: defaultScore },
       ]);
     }
+
+    // Fetch AI-powered assessment
+    const fetchAIAssessment = async () => {
+      try {
+        const parsedResume = resumeDataStr ? JSON.parse(resumeDataStr) : {};
+        const parsedRoundScores = roundScoresStr ? JSON.parse(roundScoresStr) : [];
+        const parsedResponses = interviewResponsesStr ? JSON.parse(interviewResponsesStr) : [];
+        
+        const { data } = await supabase.functions.invoke('assessment-results', {
+          body: {
+            resumeData: parsedResume,
+            assessmentScore: assessmentScoreStr ? parseInt(assessmentScoreStr, 10) : 0,
+            interviewScore: interviewScoreStr ? parseInt(interviewScoreStr, 10) : 0,
+            roundScores: parsedRoundScores,
+            interviewResponses: parsedResponses,
+          }
+        });
+        
+        if (data && !data.error) {
+          setAiAssessment(data);
+        }
+      } catch (err) {
+        console.error("AI assessment error:", err);
+      } finally {
+        setIsLoadingAI(false);
+      }
+    };
+    
+    fetchAIAssessment();
   }, []);
   
   const getFeedback = (score: number) => {
@@ -124,8 +148,8 @@ const Results = () => {
   };
   
   const getOverallFeedback = () => {
+    if (aiAssessment?.overallFeedback) return aiAssessment.overallFeedback;
     const totalScore = assessmentScore * 0.3 + interviewScore * 0.7;
-    
     if (totalScore >= 85) {
       return "Congratulations! Your performance in both the technical assessment and interview rounds was exceptional. You've demonstrated excellent technical skills, problem-solving abilities, and cultural fit for our organization. We will contact you soon via email to discuss the next steps in our hiring process.";
     } else if (totalScore >= 70) {
@@ -469,21 +493,68 @@ const Results = () => {
           </CardHeader>
           <CardContent>
             <p className="mb-6">{getOverallFeedback()}</p>
+
+            {aiAssessment?.hiringProbability !== undefined && (
+              <div className="bg-primary/5 p-4 rounded-lg mb-6">
+                <h4 className="font-medium mb-2">AI Hiring Probability</h4>
+                <div className="flex items-center gap-4">
+                  <Progress value={aiAssessment.hiringProbability} className="flex-1 h-3" />
+                  <span className="text-xl font-bold text-primary">{aiAssessment.hiringProbability}%</span>
+                </div>
+                {aiAssessment.verdict && (
+                  <p className="text-sm text-muted-foreground mt-2">Verdict: <span className="font-semibold">{aiAssessment.verdict}</span></p>
+                )}
+              </div>
+            )}
             
             <div className="bg-slate-50 p-4 rounded-lg flex items-start space-x-4 mb-6">
               <div className="bg-blue-100 p-2 rounded-full shrink-0">
                 <Award className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h4 className="font-medium mb-1">Key Takeaways</h4>
+                <h4 className="font-medium mb-1">{aiAssessment?.strengths ? "Your Strengths" : "Key Takeaways"}</h4>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Focus on continuous learning and skill development</li>
-                  <li>Practice technical interviews with concrete examples</li>
-                  <li>Build a portfolio showcasing your projects and abilities</li>
-                  <li>Network with professionals in your field</li>
+                  {aiAssessment?.strengths ? (
+                    aiAssessment.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)
+                  ) : (
+                    <>
+                      <li>Focus on continuous learning and skill development</li>
+                      <li>Practice technical interviews with concrete examples</li>
+                      <li>Build a portfolio showcasing your projects and abilities</li>
+                      <li>Network with professionals in your field</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
+
+            {aiAssessment?.improvements && (
+              <div className="bg-amber-50 p-4 rounded-lg flex items-start space-x-4 mb-6">
+                <div className="bg-amber-100 p-2 rounded-full shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">Areas to Improve</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    {aiAssessment.improvements.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {aiAssessment?.recommendations && (
+              <div className="bg-blue-50 p-4 rounded-lg flex items-start space-x-4 mb-6">
+                <div className="bg-blue-100 p-2 rounded-full shrink-0">
+                  <Award className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">Recommendations</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    {aiAssessment.recommendations.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+              </div>
+            )}
             
             {finalResult === "Passed" && (
               <div className="bg-green-50 p-4 rounded-lg border border-green-100">

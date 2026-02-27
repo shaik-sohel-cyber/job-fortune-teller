@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Upload, Check, FileText, X, File, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UploadedFile {
   name: string;
@@ -187,60 +188,57 @@ const ResumeUpload = () => {
     return true;
   };
 
-  // Parse resume content (simulated function)
-  const parseResumeContent = (file: File): Promise<ResumeData | null> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // In a real implementation, this would use a resume parsing API or library
-        // For now, we'll create some mock data based on the file name
+  // Parse resume content using AI
+  const parseResumeContent = async (file: File): Promise<ResumeData | null> => {
+    // Extract text from the file
+    const text = await file.text();
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-resume', {
+        body: { resumeText: text, jobTitle: jobTitle || "Software Developer", company: company || "Tech Company" }
+      });
+      
+      if (error) {
+        console.error("AI resume analysis error:", error);
+        // Fall back to basic parsing
+        return getFallbackResumeData(file);
+      }
+      
+      if (data && data.name) {
+        // Store AI analysis data
+        if (data.analysis) localStorage.setItem('resumeAnalysis', data.analysis);
+        if (data.matchScore) localStorage.setItem('resumeMatchScore', data.matchScore.toString());
+        if (data.strengths) localStorage.setItem('resumeStrengths', JSON.stringify(data.strengths));
+        if (data.weaknesses) localStorage.setItem('resumeWeaknesses', JSON.stringify(data.weaknesses));
         
-        // Simulated resume parsing (in a real app, this would use actual file content)
-        const firstName = file.name.split('.')[0].split('_')[0] || 'John';
-        const lastName = file.name.split('.')[0].split('_')[1] || 'Doe';
-        const fullName = `${firstName} ${lastName}`;
-        
-        // Generate random skills based on the job title
-        const allSkills = [
-          "JavaScript", "TypeScript", "React", "Angular", "Vue", "Node.js", 
-          "Python", "Java", "C#", "PHP", "Ruby", "Go", "SQL", "MongoDB",
-          "AWS", "Docker", "Kubernetes", "CI/CD", "Git", "Agile", "Scrum"
-        ];
-        
-        // Shuffle array to get random skills
-        const shuffled = [...allSkills].sort(() => 0.5 - Math.random());
-        const randomSkills = shuffled.slice(0, 5 + Math.floor(Math.random() * 5));
-        
-        const parsedData: ResumeData = {
-          name: fullName,
-          email: `${firstName.toLowerCase()}${lastName.toLowerCase()}@example.com`,
-          phone: `+1 ${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`,
-          skills: randomSkills,
-          education: [
-            {
-              degree: "Bachelor of Science in Computer Science",
-              institution: "University of Technology",
-              year: `${2010 + Math.floor(Math.random() * 10)}`
-            }
-          ],
-          experience: [
-            {
-              role: "Software Developer",
-              company: "Tech Solutions Inc.",
-              duration: "2018-2021",
-              description: "Developed and maintained web applications using modern JavaScript frameworks."
-            },
-            {
-              role: "Junior Developer",
-              company: "Digital Innovations",
-              duration: "2016-2018",
-              description: "Worked on frontend development and responsive design implementations."
-            }
-          ]
+        return {
+          name: data.name,
+          email: data.email || '',
+          phone: data.phone || '',
+          skills: data.skills || [],
+          education: data.education || [],
+          experience: data.experience || [],
         };
-        
-        resolve(parsedData);
-      }, 1500); // Simulate parsing delay
-    });
+      }
+      
+      return getFallbackResumeData(file);
+    } catch (err) {
+      console.error("Resume parsing error:", err);
+      return getFallbackResumeData(file);
+    }
+  };
+
+  const getFallbackResumeData = (file: File): ResumeData => {
+    const firstName = file.name.split('.')[0].split('_')[0] || 'John';
+    const lastName = file.name.split('.')[0].split('_')[1] || 'Doe';
+    return {
+      name: `${firstName} ${lastName}`,
+      email: `${firstName.toLowerCase()}@example.com`,
+      phone: '+1 000-000-0000',
+      skills: ["JavaScript", "React", "Node.js", "TypeScript", "Git"],
+      education: [{ degree: "Bachelor of Science in Computer Science", institution: "University", year: "2020" }],
+      experience: [{ role: "Software Developer", company: "Tech Co", duration: "2020-Present", description: "Full stack development" }],
+    };
   };
 
   const handleFile = async (file: File) => {
