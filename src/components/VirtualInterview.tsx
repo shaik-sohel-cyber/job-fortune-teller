@@ -8,6 +8,7 @@ import { Mic, MicOff, Send, User, ArrowRight, Clock, Code, BriefcaseBusiness, La
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -232,84 +233,93 @@ const VirtualInterview = () => {
       return;
     }
     
-    // Initialize interview rounds
+    // Initialize interview rounds with empty questions (will be filled by AI)
     const rounds: InterviewRound[] = [
       {
-        id: "technical",
-        name: "Technical Round",
-        description: "Assessment of technical knowledge and experience",
-        icon: <Laptop className="h-5 w-5" />,
-        completed: false,
-        currentQuestionIndex: 0,
-        messages: [],
-        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "technical")).slice(0, 5),
-        scores: []
+        id: "technical", name: "Technical Round", description: "Assessment of technical knowledge and experience",
+        icon: <Laptop className="h-5 w-5" />, completed: false, currentQuestionIndex: 0, messages: [], questions: [], scores: []
       },
       {
-        id: "coding",
-        name: "Coding Round",
-        description: "Practical coding skills and problem solving",
-        icon: <Code className="h-5 w-5" />,
-        completed: false,
-        currentQuestionIndex: 0,
-        messages: [],
-        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "coding")).slice(0, 5),
-        scores: []
+        id: "coding", name: "Coding Round", description: "Practical coding skills and problem solving",
+        icon: <Code className="h-5 w-5" />, completed: false, currentQuestionIndex: 0, messages: [], questions: [], scores: []
       },
       {
-        id: "domain",
-        name: "Domain Round",
-        description: "Specific knowledge in your area of expertise",
-        icon: <BriefcaseBusiness className="h-5 w-5" />,
-        completed: false,
-        currentQuestionIndex: 0,
-        messages: [],
-        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "domain")).slice(0, 5),
-        scores: []
+        id: "domain", name: "Domain Round", description: "Specific knowledge in your area of expertise",
+        icon: <BriefcaseBusiness className="h-5 w-5" />, completed: false, currentQuestionIndex: 0, messages: [], questions: [], scores: []
       },
       {
-        id: "hr",
-        name: "HR Round",
-        description: "Cultural fit and soft skills assessment",
-        icon: <GraduationCap className="h-5 w-5" />,
-        completed: false,
-        currentQuestionIndex: 0,
-        messages: [],
-        questions: shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, "hr")).slice(0, 5),
-        scores: []
+        id: "hr", name: "HR Round", description: "Cultural fit and soft skills assessment",
+        icon: <GraduationCap className="h-5 w-5" />, completed: false, currentQuestionIndex: 0, messages: [], questions: [], scores: []
       }
     ];
     
-    // Personalized welcome messages for each round
+    // Add welcome messages
     const welcomeMessages: {[key: string]: string} = {
-      technical: `Welcome to the Technical Round of your interview for the ${resumeData.jobTitle} position at ${resumeData.company}. In this round, we'll assess your technical knowledge and experience. Please answer the questions thoroughly and provide specific examples where possible.`,
-      coding: `Welcome to the Coding Round. Here, we'll evaluate your practical programming skills and problem-solving ability. For coding questions, please explain your approach and thought process along with your solution.`,
-      domain: `Welcome to the Domain Expertise Round. This round focuses on your specific knowledge and experience in ${resumeData.jobTitle.toLowerCase().includes("data") ? "data science and analytics" : resumeData.jobTitle.toLowerCase().includes("front") ? "frontend development" : "software development"}. We want to understand how you've applied your expertise in real-world scenarios.`,
-      hr: `Welcome to the HR Round, the final stage of our interview process. We'll discuss your career goals, cultural fit with our organization, and soft skills. This helps us understand you better as a potential team member at ${resumeData.company}.`
+      technical: `Welcome to the Technical Round of your interview for the ${resumeData.jobTitle} position at ${resumeData.company}. In this round, we'll assess your technical knowledge and experience.`,
+      coding: `Welcome to the Coding Round. We'll evaluate your practical programming skills and problem-solving ability.`,
+      domain: `Welcome to the Domain Expertise Round. This round focuses on your specific knowledge and experience.`,
+      hr: `Welcome to the HR Round. We'll discuss your career goals, cultural fit, and soft skills.`
     };
     
-    // Add welcome messages to each round
-    const updatedRounds = rounds.map(round => {
-      const welcomeMessage: Message = {
-        id: `welcome-${round.id}`,
-        role: "assistant",
-        content: welcomeMessages[round.id],
-        timestamp: new Date()
-      };
-      return {
-        ...round,
-        messages: [welcomeMessage]
-      };
-    });
+    const updatedRounds = rounds.map(round => ({
+      ...round,
+      messages: [{ id: `welcome-${round.id}`, role: "assistant" as const, content: welcomeMessages[round.id], timestamp: new Date() }]
+    }));
     
     setInterviewRounds(updatedRounds);
     
-    // Send first question after a delay for the first round
-    setTimeout(() => {
-      sendNextQuestion("technical");
-      setIsTimerRunning(true);
-    }, 1500);
+    // Fetch AI-generated questions for the first round
+    fetchAIQuestions("technical", updatedRounds);
+    setIsTimerRunning(true);
   }, []);
+
+  // Fetch AI-generated questions for a round
+  const fetchAIQuestions = async (roundId: string, rounds?: InterviewRound[]) => {
+    const candidateSkills = resumeData.candidateInfo?.skills || [];
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('interview-ai', {
+        body: {
+          action: "generate_questions",
+          jobTitle: resumeData.jobTitle,
+          company: resumeData.company,
+          round: roundId,
+          packageLevel: selectedPackage,
+          resumeSkills: candidateSkills,
+        }
+      });
+      
+      if (data?.questions && Array.isArray(data.questions)) {
+        setInterviewRounds(prev => {
+          const updated = rounds ? [...rounds] : [...prev];
+          const roundIndex = updated.findIndex(r => r.id === roundId);
+          if (roundIndex !== -1) {
+            updated[roundIndex] = { ...updated[roundIndex], questions: data.questions.slice(0, 5) };
+          }
+          return updated;
+        });
+        
+        // Send first question
+        setTimeout(() => sendNextQuestion(roundId), 1500);
+        return;
+      }
+    } catch (err) {
+      console.error("AI question generation error:", err);
+    }
+    
+    // Fallback to static questions
+    const fallbackQuestions = shuffleArray(getInterviewQuestions(resumeData.jobTitle, selectedPackage, roundId)).slice(0, 5);
+    setInterviewRounds(prev => {
+      const updated = rounds ? [...rounds] : [...prev];
+      const roundIndex = updated.findIndex(r => r.id === roundId);
+      if (roundIndex !== -1) {
+        updated[roundIndex] = { ...updated[roundIndex], questions: fallbackQuestions };
+      }
+      return updated;
+    });
+    setTimeout(() => sendNextQuestion(roundId), 1500);
+  };
+
 
   // Countdown timer for interview
   useEffect(() => {
@@ -408,10 +418,8 @@ const VirtualInterview = () => {
               setTimeout(() => {
                 setActiveRound(nextRoundId);
                 setCurrentRoundIndex(roundIndex + 1);
-                // Send first question in next round
-                setTimeout(() => {
-                  sendNextQuestion(nextRoundId);
-                }, 1000);
+                // Fetch AI questions for next round, then send first question
+                fetchAIQuestions(nextRoundId);
               }, 2000);
             } else {
               // All rounds complete
@@ -482,20 +490,13 @@ const VirtualInterview = () => {
       
       round.messages = [...round.messages, newMessage];
       
-      // Analyze answer (simulated AI scoring with more variance based on package level)
-      // Senior level has higher expectations
-      const baseScore = 5;
-      const packageMultiplier = selectedPackage === 'senior' ? 0.5 : (selectedPackage === 'mid' ? 0.7 : 0.9);
-      const answerLength = input.length;
-      const randomFactor = Math.random() * 2;
+      // Add a fallback score first (will be replaced by AI score)
+      const fallbackScore = Math.min(10, Math.max(3, Math.floor(input.length / 50) + 4));
+      round.scores = [...round.scores, fallbackScore];
       
-      // Score calculation - longer answers generally score better, with package-based scaling
-      const lengthScore = Math.min(5, Math.floor(answerLength / 100));
-      const answerScore = Math.floor(baseScore + lengthScore * packageMultiplier + randomFactor);
-      
-      // Update score for current question
-      round.scores = [...round.scores, answerScore];
-      
+      // Evaluate with AI asynchronously (will update the score)
+      const currentQuestion = round.questions[round.currentQuestionIndex - 1] || "";
+      evaluateAnswerWithAI(activeRound, currentQuestion, input);
       return updated;
     });
     
@@ -505,6 +506,41 @@ const VirtualInterview = () => {
     setTimeout(() => {
       sendNextQuestion(activeRound);
     }, 500);
+  };
+
+  const evaluateAnswerWithAI = async (roundId: string, question: string, answer: string) => {
+    try {
+      const { data } = await supabase.functions.invoke('interview-ai', {
+        body: {
+          action: "evaluate_answer",
+          jobTitle: resumeData.jobTitle,
+          company: resumeData.company,
+          round: roundId,
+          packageLevel: selectedPackage,
+          question,
+          answer,
+        }
+      });
+      
+      if (data?.score) {
+        setInterviewRounds(prev => {
+          const updated = [...prev];
+          const roundIndex = updated.findIndex(r => r.id === roundId);
+          if (roundIndex !== -1) {
+            // Replace last score with AI score
+            const scores = [...updated[roundIndex].scores];
+            if (scores.length > 0) {
+              scores[scores.length - 1] = data.score;
+            }
+            updated[roundIndex] = { ...updated[roundIndex], scores };
+          }
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error("AI evaluation error:", err);
+      // Keep fallback score
+    }
   };
 
   const generateRealisticResponse = () => {
