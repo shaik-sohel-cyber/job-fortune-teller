@@ -51,7 +51,7 @@ export function useProctor({
             context,
             event_type: type,
             severity,
-            metadata: metadata ?? {},
+            metadata: (metadata ?? {}) as never,
           });
         }
       } catch {
