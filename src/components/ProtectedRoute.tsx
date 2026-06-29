@@ -1,25 +1,24 @@
 
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
 
 const ProtectedRoute = () => {
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign up or log in to access this feature.",
-        variant: "destructive",
-      });
-    }
-  }, [isAuthenticated, toast]);
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/signup" state={{ from: location }} replace />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-slate-900">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  return isAuthenticated ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/login" state={{ from: location }} replace />
+  );
 };
 
 export default ProtectedRoute;
