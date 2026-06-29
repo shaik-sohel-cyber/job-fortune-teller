@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { CircleCheck, CircleX, Clock, AlertTriangle, Award, Send, DownloadCloud, Laptop, Code, BriefcaseBusiness, GraduationCap, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import SkillGapReport from "@/components/SkillGapReport";
 
 interface RoundScore {
   round: string;
@@ -623,6 +624,15 @@ const Results = () => {
             </Button>
           </CardFooter>
         </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="mt-8"
+      >
+        <SkillGapReport />
       </motion.div>
     </div>
   );
