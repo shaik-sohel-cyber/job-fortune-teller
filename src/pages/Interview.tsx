@@ -71,6 +71,16 @@ const Interview = () => {
         return false;
       }
 
+      if (localStorage.getItem('codingPassed') !== 'true') {
+        toast({
+          title: "Coding Gauntlet required",
+          description: "Clear the Coding Gauntlet to unlock the AI Interview.",
+          variant: "destructive",
+        });
+        navigate('/coding');
+        return false;
+      }
+
       return true;
     };
 
@@ -105,8 +115,8 @@ const Interview = () => {
           <p className="text-slate-300 mb-6">
             You need to pass the technical assessment before proceeding to the interview.
           </p>
-          <Button onClick={() => navigate('/assessment')} className="button-glow">
-            Take Assessment
+          <Button onClick={() => navigate('/coding')} className="button-glow">
+            Go to Coding Gauntlet
           </Button>
         </div>
       )}

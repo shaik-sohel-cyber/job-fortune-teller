@@ -13,6 +13,7 @@ import NotFound from "@/pages/NotFound";
 import VerificationPage from "@/pages/VerificationPage";
 import AssessmentPage from "@/pages/AssessmentPage";
 import AptitudePage from "@/pages/AptitudePage";
+import CodingPage from "@/pages/CodingPage";
 import PackageSelection from "@/components/PackageSelection";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
@@ -50,6 +51,7 @@ const App = () => (
                   <Route path="/package-selection" element={<PackageSelection />} />
                   <Route path="/aptitude" element={<AptitudePage />} />
                   <Route path="/assessment" element={<AssessmentPage />} />
+                  <Route path="/coding" element={<CodingPage />} />
                   <Route path="/interview" element={<Interview />} />
                   <Route path="/results" element={<ResultsPage />} />
                 </Route>
