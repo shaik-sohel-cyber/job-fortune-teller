@@ -138,7 +138,7 @@ const PackageSelection = () => {
       return;
     }
     
-    navigate('/assessment');
+    navigate('/aptitude');
   };
   
   return (
