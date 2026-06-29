@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Clock, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { AptitudeQuestion, getAptitudeQuestions } from "@/utils/aptitudeBank";
+import { useProctor } from "@/hooks/useProctor";
+import ProctorOverlay from "@/components/ProctorOverlay";
 
 const APTITUDE_CUTOFF = 60; // percent
 const TIME_LIMIT = 600; // 10 min
@@ -20,6 +22,26 @@ const AptitudePage = () => {
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [complete, setComplete] = useState(false);
   const [score, setScore] = useState(0);
+
+  const handleDisqualify = () => {
+    if (complete) return;
+    localStorage.setItem("aptitudeScore", "0");
+    localStorage.setItem("aptitudePassed", "false");
+    setScore(0);
+    setComplete(true);
+    toast({
+      title: "Disqualified",
+      description: "Too many proctor violations.",
+      variant: "destructive",
+    });
+  };
+
+  const proctor = useProctor({
+    context: "aptitude",
+    enabled: !complete,
+    maxViolations: 6,
+    onDisqualify: handleDisqualify,
+  });
 
   // Gate: require previous steps
   useEffect(() => {
@@ -202,6 +224,13 @@ const AptitudePage = () => {
           </div>
         )}
       </div>
+      <ProctorOverlay
+        videoRef={proctor.videoRef}
+        cameraReady={proctor.cameraReady}
+        cameraError={proctor.cameraError}
+        violationScore={proctor.violationScore}
+        maxViolations={proctor.maxViolations}
+      />
     </motion.div>
   );
 };

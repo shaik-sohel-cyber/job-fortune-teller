@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import OnlineAssessment from "@/components/OnlineAssessment";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CalendarClock } from "lucide-react";
+import { useProctor } from "@/hooks/useProctor";
+import ProctorOverlay from "@/components/ProctorOverlay";
 
 const AssessmentPage = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const AssessmentPage = () => {
     cooldownUntil: string;
     remainingMinutes: number;
   } | null>(null);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     // Check if user has completed earlier steps
@@ -104,8 +107,10 @@ const AssessmentPage = () => {
           title: "Assessment Passed",
           description: "Congratulations! Proceed to the Coding Gauntlet.",
         });
+        setDone(true);
         setTimeout(() => navigate('/coding'), 1500);
       } else {
+        setDone(true);
         // Handle failed assessment
         toast({
           title: "Assessment Not Passed",
@@ -139,6 +144,23 @@ const AssessmentPage = () => {
       window.removeEventListener('assessmentComplete', handleAssessmentComplete);
     };
   }, [navigate, toast]);
+
+  const proctor = useProctor({
+    context: "assessment",
+    enabled: !isBlocked && !done,
+    maxViolations: 6,
+    onDisqualify: () => {
+      localStorage.setItem("assessmentPassed", "false");
+      localStorage.setItem("assessmentScore", "0");
+      setDone(true);
+      toast({
+        title: "Disqualified",
+        description: "Too many proctor violations.",
+        variant: "destructive",
+      });
+      setTimeout(() => navigate("/"), 1500);
+    },
+  });
 
   return (
     <motion.div
@@ -214,6 +236,15 @@ const AssessmentPage = () => {
             <OnlineAssessment />
           </div>
         </div>
+      )}
+      {!isBlocked && (
+        <ProctorOverlay
+          videoRef={proctor.videoRef}
+          cameraReady={proctor.cameraReady}
+          cameraError={proctor.cameraError}
+          violationScore={proctor.violationScore}
+          maxViolations={proctor.maxViolations}
+        />
       )}
     </motion.div>
   );
