@@ -14,6 +14,7 @@ import VerificationPage from "@/pages/VerificationPage";
 import AssessmentPage from "@/pages/AssessmentPage";
 import AptitudePage from "@/pages/AptitudePage";
 import CodingPage from "@/pages/CodingPage";
+import TelemetryPage from "@/pages/TelemetryPage";
 import PackageSelection from "@/components/PackageSelection";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
@@ -54,6 +55,7 @@ const App = () => (
                   <Route path="/coding" element={<CodingPage />} />
                   <Route path="/interview" element={<Interview />} />
                   <Route path="/results" element={<ResultsPage />} />
+                  <Route path="/telemetry" element={<TelemetryPage />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />
