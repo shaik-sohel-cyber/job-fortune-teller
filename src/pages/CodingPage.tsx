@@ -13,6 +13,8 @@ import {
   LangId,
   pickProblems,
 } from "@/utils/codingProblems";
+import { useProctor } from "@/hooks/useProctor";
+import ProctorOverlay from "@/components/ProctorOverlay";
 import {
   Play,
   Send,
@@ -47,6 +49,22 @@ const CodingPage = () => {
   const [results, setResults] = useState<ProblemResult[]>([]);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [complete, setComplete] = useState(false);
+
+  const proctor = useProctor({
+    context: "coding",
+    enabled: !complete,
+    maxViolations: 8,
+    onDisqualify: () => {
+      localStorage.setItem("codingPassed", "false");
+      localStorage.setItem("codingScore", "0");
+      setComplete(true);
+      toast({
+        title: "Disqualified",
+        description: "Too many proctor violations.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Gate
   useEffect(() => {
@@ -367,6 +385,13 @@ const CodingPage = () => {
           </div>
         </div>
       </div>
+      <ProctorOverlay
+        videoRef={proctor.videoRef}
+        cameraReady={proctor.cameraReady}
+        cameraError={proctor.cameraError}
+        violationScore={proctor.violationScore}
+        maxViolations={proctor.maxViolations}
+      />
     </motion.div>
   );
 };
