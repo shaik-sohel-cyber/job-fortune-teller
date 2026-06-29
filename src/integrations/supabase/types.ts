@@ -14,7 +14,368 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_attempts: {
+        Row: {
+          answers: Json | null
+          completed_at: string | null
+          created_at: string
+          cutoff: number
+          id: string
+          kind: Database["public"]["Enums"]["assessment_kind"]
+          package_id: string | null
+          passed: boolean | null
+          questions: Json
+          score: number | null
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          cutoff?: number
+          id?: string
+          kind: Database["public"]["Enums"]["assessment_kind"]
+          package_id?: string | null
+          passed?: boolean | null
+          questions: Json
+          score?: number | null
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          cutoff?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["assessment_kind"]
+          package_id?: string | null
+          passed?: boolean | null
+          questions?: Json
+          score?: number | null
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_attempts_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cooldowns: {
+        Row: {
+          company: string
+          cooldown_until: string
+          created_at: string
+          id: string
+          reason: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company: string
+          cooldown_until: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string
+          cooldown_until?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interview_answers: {
+        Row: {
+          ai_feedback: string | null
+          ai_score: number | null
+          answer: string | null
+          code: string | null
+          created_at: string
+          id: string
+          language: string | null
+          question: string
+          round: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          ai_feedback?: string | null
+          ai_score?: number | null
+          answer?: string | null
+          code?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          question: string
+          round: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          ai_feedback?: string | null
+          ai_score?: number | null
+          answer?: string | null
+          code?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          question?: string
+          round?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_round: string
+          id: string
+          overall_score: number | null
+          package_id: string | null
+          started_at: string
+          status: string
+          summary: Json | null
+          updated_at: string
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_round?: string
+          id?: string
+          overall_score?: number | null
+          package_id?: string | null
+          started_at?: string
+          status?: string
+          summary?: Json | null
+          updated_at?: string
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_round?: string
+          id?: string
+          overall_score?: number | null
+          package_id?: string | null
+          started_at?: string
+          status?: string
+          summary?: Json | null
+          updated_at?: string
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_sessions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          company: string
+          created_at: string
+          cutoff_score: number
+          difficulty: string
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          cutoff_score?: number
+          difficulty?: string
+          id?: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          cutoff_score?: number
+          difficulty?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      proctor_events: {
+        Row: {
+          context: string
+          context_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          context: string
+          context_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          context?: string
+          context_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resumes: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          id: string
+          parsed: Json | null
+          raw_text: string | null
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          parsed?: Json | null
+          raw_text?: string | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          parsed?: Json | null
+          raw_text?: string | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      skill_gaps: {
+        Row: {
+          created_at: string
+          id: string
+          matched_skills: Json | null
+          missing_skills: Json | null
+          overall_match: number | null
+          roadmap: Json | null
+          session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matched_skills?: Json | null
+          missing_skills?: Json | null
+          overall_match?: number | null
+          roadmap?: Json | null
+          session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matched_skills?: Json | null
+          missing_skills?: Json | null
+          overall_match?: number | null
+          roadmap?: Json | null
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_gaps_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +384,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      assessment_kind: "aptitude" | "technical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +511,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      assessment_kind: ["aptitude", "technical"],
+    },
   },
 } as const
