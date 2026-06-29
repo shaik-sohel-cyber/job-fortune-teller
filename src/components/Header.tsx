@@ -50,6 +50,7 @@ const Header = () => {
             { path: "/", label: "Home" },
             { path: "/upload", label: "Upload Resume" },
             { path: "/interview", label: "Interview" },
+            { path: "/telemetry", label: "Telemetry" },
             { path: "/about", label: "About Us" },
             { path: "/contact", label: "Contact" },
           ].map((item) => (
