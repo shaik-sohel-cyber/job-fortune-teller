@@ -85,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [
       "resumeData", "verificationResults", "selectedPackage",
       "assessmentScore", "assessmentPassed", "aptitudePassed",
+      "aptitudeScore", "codingScore", "codingPassed",
       "interviewComplete", "failedCompanies",
     ].forEach((k) => localStorage.removeItem(k));
     toast({ title: "Logged out" });

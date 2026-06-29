@@ -102,13 +102,9 @@ const AssessmentPage = () => {
       if (passed) {
         toast({
           title: "Assessment Passed",
-          description: "Congratulations! You can now proceed to the interview.",
+          description: "Congratulations! Proceed to the Coding Gauntlet.",
         });
-        
-        // Automatically redirect to interview page
-        setTimeout(() => {
-          navigate('/interview');
-        }, 1500);
+        setTimeout(() => navigate('/coding'), 1500);
       } else {
         // Handle failed assessment
         toast({
