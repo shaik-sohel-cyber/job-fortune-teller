@@ -5,65 +5,69 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 210 40% 98%;
+    /* JobGenisis cyberpunk palette — deep void + neon cyan/magenta */
+    --background: 230 35% 4%;
+    --foreground: 180 100% 92%;
 
-    --card: 0 0% 7%;
-    --card-foreground: 210 40% 98%;
+    --card: 232 38% 7%;
+    --card-foreground: 180 100% 94%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 232 40% 6%;
+    --popover-foreground: 180 100% 94%;
 
-    --primary: 222 89% 54%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 187 100% 55%;          /* neon cyan */
+    --primary-foreground: 230 60% 6%;
+    --primary-glow: 187 100% 70%;
 
-    --secondary: 0 0% 9%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 232 30% 12%;
+    --secondary-foreground: 180 100% 92%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 215 16% 65%;
+    --muted: 232 25% 14%;
+    --muted-foreground: 210 30% 70%;
 
-    --accent: 0 100% 50%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 320 100% 60%;           /* neon magenta */
+    --accent-foreground: 230 60% 6%;
+    --accent-glow: 320 100% 72%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 350 100% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 100% 50%;
+    --border: 187 60% 22%;
+    --input: 232 30% 14%;
+    --ring: 187 100% 55%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
+
+    /* gradients & shadows */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    --gradient-cyber: linear-gradient(135deg, hsl(187 100% 55% / 0.18), hsl(320 100% 60% / 0.18));
+    --gradient-void: radial-gradient(ellipse at top, hsl(232 50% 10%) 0%, hsl(230 35% 4%) 60%);
+    --shadow-neon-cyan: 0 0 8px hsl(var(--primary) / 0.6), 0 0 24px hsl(var(--primary) / 0.35);
+    --shadow-neon-magenta: 0 0 8px hsl(var(--accent) / 0.6), 0 0 24px hsl(var(--accent) / 0.35);
+    --shadow-elegant: 0 20px 50px -20px hsl(var(--primary) / 0.45);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 210 40% 98%;
-
-    --card: 0 0% 7%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 0 0% 7%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
-
-    --secondary: 0 0% 9%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 0 100% 50%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 100% 50%;
+    --background: 230 35% 4%;
+    --foreground: 180 100% 92%;
+    --card: 232 38% 7%;
+    --card-foreground: 180 100% 94%;
+    --popover: 232 40% 6%;
+    --popover-foreground: 180 100% 94%;
+    --primary: 187 100% 55%;
+    --primary-foreground: 230 60% 6%;
+    --secondary: 232 30% 12%;
+    --secondary-foreground: 180 100% 92%;
+    --muted: 232 25% 14%;
+    --muted-foreground: 210 30% 70%;
+    --accent: 320 100% 60%;
+    --accent-foreground: 230 60% 6%;
+    --destructive: 350 100% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 187 60% 22%;
+    --input: 232 30% 14%;
+    --ring: 187 100% 55%;
   }
 }
 
@@ -74,54 +78,158 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Rajdhani', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: var(--gradient-void);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* Animated grid overlay on body */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(hsl(var(--primary) / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 3px,
+      hsl(var(--primary) / 0.025) 3px,
+      hsl(var(--primary) / 0.025) 4px
+    );
+  }
+
+  #root { position: relative; z-index: 1; }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.5);
+    color: hsl(var(--foreground));
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-black/50 backdrop-blur-md border border-white/10 shadow-lg;
+    @apply backdrop-blur-xl border;
+    background: linear-gradient(135deg, hsl(var(--card) / 0.85), hsl(var(--card) / 0.55));
+    border-color: hsl(var(--primary) / 0.25);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.08) inset,
+      0 20px 60px -25px hsl(var(--primary) / 0.4);
   }
-  
+
   .button-glow {
-    @apply relative overflow-hidden transition-all duration-300 
-           after:absolute after:inset-0 after:z-[-1] 
-           after:opacity-0 after:transition-opacity hover:after:opacity-100 
-           after:bg-gradient-to-r after:from-accent/70 after:to-accent/40 
-           after:animate-pulse-slow;
+    position: relative;
+    background: var(--gradient-primary);
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--shadow-neon-cyan);
+    transition: var(--transition-smooth);
   }
-  
+  .button-glow:hover {
+    box-shadow: var(--shadow-neon-magenta), var(--shadow-neon-cyan);
+    transform: translateY(-1px);
+  }
+
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent/70;
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .neon-border {
+    border: 1px solid hsl(var(--primary) / 0.5);
+    box-shadow: var(--shadow-neon-cyan);
+  }
+
+  .neon-text {
+    color: hsl(var(--primary));
+    text-shadow: 0 0 6px hsl(var(--primary) / 0.7), 0 0 18px hsl(var(--primary) / 0.4);
+  }
+
+  .neon-text-magenta {
+    color: hsl(var(--accent));
+    text-shadow: 0 0 6px hsl(var(--accent) / 0.7), 0 0 18px hsl(var(--accent) / 0.4);
+  }
+
+  /* Glitch effect */
+  .glitch {
+    position: relative;
+    color: hsl(var(--foreground));
+  }
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .glitch::before {
+    color: hsl(var(--primary));
+    transform: translate(2px, 0);
+    mix-blend-mode: screen;
+    animation: glitch-x 2.6s infinite steps(1);
+  }
+  .glitch::after {
+    color: hsl(var(--accent));
+    transform: translate(-2px, 0);
+    mix-blend-mode: screen;
+    animation: glitch-x 2.2s infinite steps(1) reverse;
+  }
+
+  @keyframes glitch-x {
+    0%, 92%, 100% { clip-path: inset(0 0 0 0); transform: translate(0,0); }
+    93% { clip-path: inset(10% 0 70% 0); transform: translate(3px, 0); }
+    95% { clip-path: inset(60% 0 10% 0); transform: translate(-3px, 0); }
+    97% { clip-path: inset(30% 0 40% 0); transform: translate(2px, 0); }
   }
 
   /* Neon tab animation */
   .neon-tab {
     @apply relative transition-all duration-300;
   }
-  
+
   .neon-tab::before {
     content: '';
-    @apply absolute -bottom-1 left-0 w-full h-[2px] bg-accent 
-           opacity-0 transition-all duration-300 
-           shadow-[0_0_5px_#ff0000,0_0_10px_#ff0000,0_0_15px_#ff0000];
+    position: absolute;
+    left: 0; right: 0; bottom: -4px;
+    height: 2px;
+    background: hsl(var(--primary));
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: 0 0 6px hsl(var(--primary)), 0 0 14px hsl(var(--primary));
   }
-  
+
   .neon-tab:hover::before,
   .neon-tab[data-active="true"]::before {
     @apply opacity-100;
     animation: neon-pulse 1.5s infinite alternate;
   }
-  
+
   @keyframes neon-pulse {
-    0% {
-      opacity: 0.7;
-      box-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
-    }
-    100% {
-      opacity: 1;
-      box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000;
-    }
+    0% { opacity: 0.7; box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)); }
+    100% { opacity: 1; box-shadow: 0 0 10px hsl(var(--primary)), 0 0 22px hsl(var(--primary)), 0 0 32px hsl(var(--accent)); }
   }
 }
 
