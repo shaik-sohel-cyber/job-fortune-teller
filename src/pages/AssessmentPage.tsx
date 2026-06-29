@@ -49,6 +49,16 @@ const AssessmentPage = () => {
       return;
     }
 
+    if (localStorage.getItem('aptitudePassed') !== 'true') {
+      toast({
+        title: "Aptitude round required",
+        description: "Please clear the aptitude round to access the technical assessment.",
+        variant: "destructive",
+      });
+      navigate('/aptitude');
+      return;
+    }
+
     // Check if company is in cooldown period
     const resumeData = JSON.parse(localStorage.getItem('resumeData') || '{}');
     const company = resumeData.company || '';
