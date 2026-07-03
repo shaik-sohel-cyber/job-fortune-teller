@@ -10,6 +10,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const hideHeader = location.pathname === "/dashboard";
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -21,7 +22,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-accent/5 rounded-full filter blur-3xl animate-float" style={{ animationDelay: "-6s" }} />
       </div>
       
-      <Header />
+      {!hideHeader && <Header />}
       
       <AnimatePresence mode="wait">
         <div key={location.pathname}>{children}</div>

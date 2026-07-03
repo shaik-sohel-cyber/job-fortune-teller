@@ -16,6 +16,7 @@ import AptitudePage from "@/pages/AptitudePage";
 import CodingPage from "@/pages/CodingPage";
 import TelemetryPage from "@/pages/TelemetryPage";
 import PackageSelection from "@/components/PackageSelection";
+import Dashboard from "@/pages/Dashboard";
 import AboutUs from "@/pages/AboutUs";
 import ContactUs from "@/pages/ContactUs";
 import Login from "@/pages/Login";
@@ -47,6 +48,7 @@ const App = () => (
                 
                 {/* Protected routes - features that require login */}
                 <Route element={<ProtectedRoute />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/verification" element={<VerificationPage />} />
                   <Route path="/package-selection" element={<PackageSelection />} />
