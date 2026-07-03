@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
     toast({ title: "Welcome back!" });
-    navigate("/dashboard");
+    navigate("/");
   };
 
   const signup = async (name: string, email: string, password: string) => {
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
     toast({ title: "Account created", description: "Welcome to JobGenisis!" });
-    navigate("/dashboard");
+    navigate("/");
   };
 
   const logout = async () => {

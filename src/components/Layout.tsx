@@ -10,7 +10,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  const hideHeader = location.pathname === "/dashboard";
+  const hideHeader = location.pathname === "/dashboard" || location.pathname === "/";
 
   return (
     <div className="relative min-h-screen bg-background">
