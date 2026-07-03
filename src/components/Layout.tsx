@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,7 +11,10 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  const hideHeader = location.pathname === "/dashboard" || location.pathname === "/";
+  const { isAuthenticated } = useAuth();
+  const hideHeader =
+    location.pathname === "/dashboard" ||
+    (location.pathname === "/" && isAuthenticated);
 
   return (
     <div className="relative min-h-screen bg-background">
