@@ -3,9 +3,13 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, MessageSquare, LineChart } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import Dashboard from "@/pages/Dashboard";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Dashboard />;
 
   const containerVariants = {
     hidden: { opacity: 0 },
